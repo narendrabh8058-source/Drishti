@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drishti</title>
+<style>
+  :root { --bg:#010a10; --panel:#031722; --panel2:#052231; --cy:#19d3f0; --cy2:#0a93ad; --line:rgba(25,211,240,.26); --text:#cdeef8; --muted:#5d8ea1;
+          --pos:#2ee86b; --neg:#ff4d6a; --neu:#f5c518; --warn:#ff9a3d; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; font-family:"Rajdhani","Segoe UI",system-ui,sans-serif; color:var(--text); background:var(--bg);
+         background-image:radial-gradient(900px 700px at 50% 42%, rgba(10,90,115,.28), transparent 70%);
+         display:grid; grid-template-rows:54px minmax(0,1fr) 30px; height:100vh; overflow:hidden; }
+  ::-webkit-scrollbar { width:6px; height:6px; } ::-webkit-scrollbar-thumb { background:var(--cy2); border-radius:6px; }
+  .mono { font-family:"Consolas","Courier New",monospace; letter-spacing:1px; }
+  .hud { background:var(--panel); border:1px solid var(--line); border-radius:8px; }
+
+  /* ---- top bar ---- */
+  .top { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 16px; border-bottom:1px solid var(--line); background:rgba(1,12,19,.85); }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .reactor { width:30px; height:30px; position:relative; flex:none; }
+  .reactor i { position:absolute; border-radius:50%; border:1.5px solid var(--cy); inset:0; filter:drop-shadow(0 0 4px var(--cy)); }
+  .reactor i:nth-child(1) { border-style:dashed; animation:spin 14s linear infinite; }
+  .reactor i:nth-child(2) { inset:5px; border-color:var(--cy2); border-top-color:transparent; border-bottom-color:transparent; animation:spin 4s linear infinite reverse; }
+  .reactor i:nth-child(3) { inset:11px; background:radial-gradient(circle,#fff,var(--cy) 60%); border:0; animation:glow 2.4s ease-in-out infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes glow { 50% { box-shadow:0 0 14px 3px var(--cy); } 0%,100% { box-shadow:0 0 6px 1px var(--cy); } }
+  .brand h1 { margin:0; font-size:21px; letter-spacing:6px; color:#fff; text-shadow:0 0 10px var(--cy); }
+  .title { text-align:center; }
+  .title b { display:block; font-size:15px; letter-spacing:5px; color:var(--cy); font-weight:600; text-shadow:0 0 8px rgba(25,211,240,.6); }
+  .title i { display:block; height:5px; margin-top:6px; background:repeating-linear-gradient(90deg, var(--cy2) 0 4px, transparent 4px 9px); opacity:.55; }
+  .clock { text-align:right; color:var(--cy); font-size:19px; text-shadow:0 0 8px var(--cy); line-height:1.1; }
+  .clock small { display:block; color:var(--muted); font-size:10px; letter-spacing:2px; text-shadow:none; margin-top:2px; }
+
+  /* ---- columns ---- */
+  .cols { display:grid; grid-template-columns:250px minmax(0,1fr) 440px; min-height:0; }
+  .left { padding:12px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; border-right:1px solid var(--line); background:rgba(1,12,19,.55); }
+  .right { display:flex; flex-direction:column; min-height:0; border-left:1px solid var(--line); background:rgba(1,12,19,.55); }
+  .center { position:relative; display:flex; flex-direction:column; min-height:0; }
+
+  .sec { font-size:11px; letter-spacing:3px; color:var(--cy); text-transform:uppercase; padding:2px 2px 6px; border-bottom:1px solid var(--line); margin-bottom:2px; }
+  .stat { padding:8px 12px 10px; cursor:pointer; transition:.15s; --c:var(--cy); border-color:color-mix(in srgb, var(--c) 40%, transparent); }
+  .stat:hover { background:var(--panel2); }
+  .stat.active { border-color:var(--c); box-shadow:0 0 16px color-mix(in srgb, var(--c) 40%, transparent), inset 0 0 14px color-mix(in srgb, var(--c) 14%, transparent); }
+  .stat span { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:2.5px; }
+  .stat b { display:block; font-size:30px; font-weight:700; color:var(--c); text-shadow:0 0 10px color-mix(in srgb, var(--c) 70%, transparent); line-height:1.1; }
+  .bar { height:3px; background:rgba(255,255,255,.07); margin-top:6px; border-radius:2px; }
+  .bar i { display:block; height:100%; width:0; background:var(--c); box-shadow:0 0 8px var(--c); transition:width .6s; border-radius:2px; }
+
+  .group { display:flex; flex-direction:column; gap:4px; }
+  .group label { font-size:10px; text-transform:uppercase; letter-spacing:2.5px; color:var(--muted); }
+  input, select, button { font:inherit; font-size:14px; color:var(--text); background:rgba(3,20,31,.9); border:1px solid var(--line); border-radius:6px; padding:7px 10px; outline:none; transition:.15s; width:100%; }
+  input:focus, select:focus { border-color:var(--cy); box-shadow:0 0 10px rgba(25,211,240,.3); }
+  select { appearance:none; cursor:pointer; }
+  option { background:#04141f; }
+  button { cursor:pointer; text-transform:uppercase; letter-spacing:2.5px; font-weight:700; color:var(--cy); background:rgba(25,211,240,.07); border:1px solid var(--cy); }
+  button:hover { background:rgba(25,211,240,.2); color:#fff; box-shadow:0 0 14px rgba(25,211,240,.4); }
+  button:disabled { opacity:.55; cursor:wait; }
+  .spacer { flex:1; }
+  #mic { color:var(--pos); border-color:var(--pos); background:rgba(46,232,107,.07); padding:10px; }
+  #mic:hover { background:rgba(46,232,107,.2); box-shadow:0 0 14px rgba(46,232,107,.4); }
+  #mic.on { color:#ffb3bf; border-color:var(--neg); background:rgba(255,77,106,.12); animation:micpulse 1.4s infinite; }
+  @keyframes micpulse { 50% { box-shadow:0 0 20px rgba(255,77,106,.55); } }
+
+  /* ---- centre: the head ---- */
+  #face { flex:1; width:100%; min-height:0; display:block; }
+  .console { padding:0 18px 14px; text-align:center; }
+  #voicebox { max-width:640px; margin:0 auto; }
+  #voicebox .st { color:var(--cy); font-size:12px; letter-spacing:4px; text-transform:uppercase; }
+  #voicebox .you { color:var(--muted); font-size:13px; min-height:18px; margin-top:6px; }
+  #voicebox .bot { color:#fff; font-size:17px; line-height:1.45; min-height:24px; }
+  #wave { width:min(560px,90%); height:34px; display:block; margin:8px auto 0; }
+
+  /* ---- DATA CORE (centre panel) ---- */
+  #core { position:absolute; inset:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:8px; background:rgba(1,10,16,.7); overflow:hidden; }
+  #rain { position:absolute; inset:0; width:100%; height:100%; opacity:.22; pointer-events:none; }
+  #core > *:not(#rain) { position:relative; z-index:1; }
+  .core-head { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--line); font-size:11px; letter-spacing:3px; color:var(--cy); text-transform:uppercase; background:rgba(3,23,34,.7); }
+  .core-head .rate { color:var(--pos); }
+  #pipe { width:100%; height:176px; display:block; flex:none; }
+  #pipe text { font-family:"Consolas","Courier New",monospace; font-size:9px; letter-spacing:1px; fill:var(--muted); text-transform:uppercase; }
+  #pipe .node rect { fill:rgba(3,23,34,.9); stroke:var(--cy2); stroke-width:1; rx:4; }
+  #pipe .node.hot rect { stroke:var(--cy); filter:drop-shadow(0 0 6px var(--cy)); }
+  #pipe .node.hot text { fill:#fff; }
+  #pipe .link { stroke:rgba(25,211,240,.22); stroke-width:1; fill:none; stroke-dasharray:3 4; }
+  #pipe .pkt { filter:drop-shadow(0 0 5px currentColor); }
+  #term { flex:1; min-height:0; overflow:hidden; padding:8px 12px; font-family:"Consolas","Courier New",monospace; font-size:12px; line-height:1.55; display:flex; flex-direction:column; justify-content:flex-end; }
+  #term div { flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.95; animation:lin .25s ease-out; }
+  @keyframes lin { from { opacity:0; transform:translateX(-8px); } }
+  #term .ts { color:#3a6f80; } #term .tag-i { color:var(--cy); } #term .tag-c { color:#b9a8ff; } #term .tag-s { color:var(--pos); }
+  #term .tag-y { color:#ffcc66; } #term .dim { color:#3f7186; } #term .pos { color:var(--pos); } #term .neg { color:var(--neg); } #term .neu { color:var(--neu); }
+  #term .hex { color:#1d5566; }
+  .cursor { display:inline-block; width:7px; height:12px; background:var(--cy); margin-left:4px; vertical-align:middle; animation:blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+  .core-foot { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; border-top:1px solid var(--line); background:var(--line); }
+  .core-foot div { background:rgba(3,23,34,.92); padding:7px 10px; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
+  .core-foot b { display:block; font-size:19px; color:var(--cy); letter-spacing:1px; text-shadow:0 0 8px rgba(25,211,240,.5); }
+
+  .stage { flex:1; min-height:0; position:relative; margin:10px 14px 0; }
+  #viewer { position:absolute; inset:0; z-index:20; display:none; }
+  #viewer.show { display:block; }
+  #viewer .box { width:100%; height:100%; display:flex; flex-direction:column; background:rgba(3,16,28,.98); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+
+  /* ---- right: feed ---- */
+  .rhead { display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line); }
+  .rhead button { padding:7px 10px; font-size:12px; opacity:.55; }
+  .rhead button.active { opacity:1; background:rgba(25,211,240,.2); color:#fff; box-shadow:0 0 12px rgba(25,211,240,.3); }
+  .feed { flex:1; overflow-y:auto; padding:12px; min-height:0; }
+  .item { padding:10px 13px; margin-bottom:9px; transition:.15s; border-left:3px solid var(--neu); }
+  .item.negative { border-left-color:var(--neg); } .item.positive { border-left-color:var(--pos); }
+  .item:hover { background:var(--panel2); border-color:var(--cy); }
+  .item a { color:#e8f8ff; text-decoration:none; font-weight:600; line-height:1.4; font-size:15px; cursor:pointer; }
+  .item a:hover { color:var(--cy); }
+  .meta { color:var(--muted); font-size:11px; margin-top:7px; display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+  .tag { padding:1px 8px; font-size:10px; text-transform:uppercase; letter-spacing:1.4px; border:1px solid var(--line); border-radius:10px; color:var(--muted); }
+  .tag.negative { color:var(--neg); border-color:var(--neg); } .tag.positive { color:var(--pos); border-color:var(--pos); }
+  .tag.neutral { color:var(--neu); border-color:rgba(245,197,24,.5); }
+  .tag.topic { color:var(--cy); border-color:var(--cy2); }
+  .tag.plat { color:#b9a8ff; border-color:#6f5bd6; }
+  .tag.plat.youtube { color:#ff8d8d; border-color:#c93a3a; } .tag.plat.reddit { color:#ffb27a; border-color:#d5671e; }
+  .tag.plat.instagram { color:#ff9ad0; border-color:#c43e8f; } .tag.plat.facebook { color:#8fbaff; border-color:#3a72d4; }
+  .tag.plat.x { color:#e7e9ea; border-color:#8b98a5; }
+  .tag.plat.news { color:#9fe7ff; border-color:var(--cy2); }
+  .empty { color:var(--muted); text-align:center; padding:50px 10px; letter-spacing:3px; text-transform:uppercase; font-size:13px; }
+
+  #accounts { display:none; }
+  body.v-accounts #accounts { display:block; }
+  body.v-accounts #list, body.v-accounts #srcchip { display:none !important; }
+  #srcchip { display:none; margin-bottom:10px; padding:7px 10px; align-items:center; gap:10px; color:var(--cy); font-size:13px; }
+  #srcchip.show { display:flex; }
+  #srcchip button { width:auto; padding:2px 10px; font-size:11px; letter-spacing:1px; }
+  .acc-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .acc-head input[type=text] { flex:1; min-width:140px; }
+  .acc-head label { color:var(--muted); font-size:12px; white-space:nowrap; display:flex; gap:6px; align-items:center; }
+  .acc-head input[type=checkbox] { width:auto; }
+  .acc-head button { width:auto; padding:7px 10px; font-size:11px; }
+  .acc-note { color:var(--muted); font-size:12px; margin-bottom:10px; line-height:1.55; }
+  .acc { padding:10px 12px; margin-bottom:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .acc.w { border-color:var(--warn); box-shadow:0 0 12px rgba(255,154,61,.2); }
+  .acc .who { flex:1; min-width:170px; }
+  .acc .un { font-size:16px; font-weight:700; color:#fff; }
+  .acc .fn { color:var(--muted); font-size:12px; margin-top:1px; }
+  .acc .chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .acc .btns { display:flex; gap:6px; flex-wrap:wrap; }
+  .acc .btns button, .acc .btns a { width:auto; padding:5px 10px; font-size:11px; letter-spacing:1.2px; text-transform:uppercase; text-decoration:none; color:var(--cy); border:1px solid var(--cy); border-radius:6px; background:rgba(25,211,240,.07); cursor:pointer; }
+  .acc .btns .wbtn.on { color:#02070d; background:var(--warn); border-color:var(--warn); }
+
+  /* ---- bottom bar ---- */
+  .bot { display:flex; justify-content:space-between; align-items:center; padding:0 16px; border-top:1px solid var(--line); background:rgba(1,12,19,.85); font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; }
+  .dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--pos); box-shadow:0 0 8px var(--pos); margin-right:8px; animation:pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity:.25; } }
+
+  /* ---- viewer (news / video popup) ---- */
+  #viewer .vbar { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); }
+  #viewer .vbar .ttl { flex:1; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff; }
+  #viewer .vbar a, #viewer .vbar button { width:auto; padding:6px 12px; font-size:12px; letter-spacing:1.5px; text-decoration:none; color:var(--cy); border:1px solid var(--cy); border-radius:6px; background:rgba(25,211,240,.08); text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  #viewer .body { flex:1; overflow:auto; display:flex; justify-content:center; }
+  #viewer iframe { width:100%; height:100%; border:0; background:#fff; }
+  #viewer .body.embed { background:#000; padding:0; }
+  #viewer .article { max-width:760px; padding:22px 26px 40px; line-height:1.8; font-size:18px; color:#d8f1ff; }
+  #viewer .article img { width:100%; max-height:380px; object-fit:cover; margin-bottom:16px; border:1px solid var(--line); border-radius:6px; }
+  #viewer .article h2 { margin:0 0 6px; font-size:26px; color:#fff; line-height:1.35; }
+  #viewer .article .site { color:var(--cy); font-size:12px; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; }
+  #viewer .article p { margin:0 0 14px; }
+  #viewer .msg { margin:auto; text-align:center; color:var(--muted); padding:30px; letter-spacing:1px; max-width:480px; line-height:1.7; }
+
+  @media (max-width:1180px) { .cols { grid-template-columns:220px minmax(0,1fr) 360px; } }
+  @media (max-width:900px) {
+    body { display:block; height:auto; overflow:auto; }
+    .top { padding:8px 12px; grid-template-columns:1fr auto; height:54px; } .title { display:none; }
+    .cols { display:flex; flex-direction:column; }
+    .center { order:1; height:62vh; } .left { order:2; border-right:0; } .right { order:3; border-left:0; min-height:70vh; }
+    .bot { height:30px; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="reactor"><i></i><i></i><i></i></div><h1>DRISHTI</h1></div>
+  <div class="title"><b class="mono">CISF · ISRO · MEDIA INTELLIGENCE</b><i></i></div>
+  <div class="clock mono"><span id="clock">--:--:--</span><small id="date"></small></div>
+</header>
+
+<div class="cols">
+  <aside class="left">
+    <div class="sec mono">// SENTIMENT</div>
+    <div class="stat hud" data-s=""><span>कुल</span><b id="s-total">-</b><div class="bar"><i id="b-total"></i></div></div>
+    <div class="stat hud" data-s="negative" style="--c:var(--neg)"><span>Negative</span><b id="s-negative">-</b><div class="bar"><i id="b-negative"></i></div></div>
+    <div class="stat hud" data-s="positive" style="--c:var(--pos)"><span>Positive</span><b id="s-positive">-</b><div class="bar"><i id="b-positive"></i></div></div>
+    <div class="stat hud" data-s="neutral" style="--c:var(--neu)"><span>Neutral</span><b id="s-neutral">-</b><div class="bar"><i id="b-neutral"></i></div></div>
+
+    <div class="sec mono" style="margin-top:6px">// FILTERS</div>
+    <div class="group"><label>खोजें</label><input id="q" placeholder="SEARCH..."></div>
+    <div class="group"><label>विषय</label>
+      <select id="topic"><option value="">CISF + ISRO</option><option>CISF</option><option>ISRO</option></select></div>
+    <div class="group"><label>Sentiment</label>
+      <select id="sentiment"><option value="">सभी sentiment</option><option value="negative">Negative</option><option value="positive">Positive</option><option value="neutral">Neutral</option></select></div>
+    <div class="group"><label>Platform</label>
+      <select id="platform"><option value="">सभी platform</option><option value="news">News</option><option value="youtube">YouTube</option><option value="reddit">Reddit</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="x">X (Twitter)</option></select></div>
+    <div class="group"><label>भाषा</label>
+      <select id="language"><option value="">सभी भाषा</option><option value="hi">हिंदी</option><option value="en">English</option></select></div>
+    <div class="spacer"></div>
+    <button id="mic">🎤 Voice चालू करें</button>
+    <button id="refresh">अभी अपडेट करें</button>
+  </aside>
+
+  <section class="center">
+    <div class="stage">
+    <div id="core">
+      <canvas id="rain"></canvas>
+      <div class="core-head"><span>◈ DATA CORE · LIVE PIPELINE</span><span class="rate" id="core-rate">0.0 EV/S</span></div>
+      <svg id="pipe" viewBox="0 0 640 176" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="term"></div>
+      <div class="core-foot">
+        <div>INGESTED<b id="cf-total">0</b></div>
+        <div>AI CLASSIFIED<b id="cf-ai">0</b></div>
+        <div>ALERTS (NEG)<b id="cf-neg" style="color:var(--neg);text-shadow:0 0 8px rgba(255,77,106,.5)">0</b></div>
+        <div>UPTIME<b id="cf-up">00:00</b></div>
+      </div>
+    </div>
+      <div id="viewer">
+        <div class="box">
+          <div class="vbar">
+            <span class="tag plat" id="vw-plat"></span>
+            <span class="ttl" id="vw-title"></span>
+            <a id="vw-orig" href="#" target="_blank" rel="noopener noreferrer" style="display:none">नए टैब में खोलें ↗</a>
+            <button id="vw-close">← डेटा कोर</button>
+          </div>
+          <div class="body" id="vw-body"></div>
+        </div>
+      </div>
+    </div>
+    <div class="console">
+      <div id="voicebox">
+        <div class="st mono" id="v-state">Standby — 🎤 दबाकर बोलिए: Hey Drishti</div>
+        <div class="you" id="v-you"></div>
+        <div class="bot" id="v-bot"></div>
+      </div>
+      <canvas id="wave"></canvas>
+    </div>
+  </section>
+
+  <aside class="right">
+    <div class="rhead">
+      <button id="tab-news" class="active">📰 खबरें</button>
+      <button id="tab-acc">👤 CISF अकाउंट</button>
+    </div>
+    <div class="feed">
+      <div class="hud" id="srcchip"><span id="srctext"></span><button id="srcx">✕ हटाएँ</button></div>
+      <div id="accounts">
+        <div class="acc-head">
+          <input id="acc-q" type="text" placeholder="USERNAME / नाम खोजें...">
+          <label><input id="acc-w" type="checkbox"> सिर्फ़ Watch वाले</label>
+          <button id="acc-refresh">🔍 नए अकाउंट खोजें</button>
+        </div>
+        <div class="acc-note" id="acc-count"></div>
+        <div id="acc-list"></div>
+      </div>
+      <div id="list"></div>
+    </div>
+  </aside>
+</div>
+
+<footer class="bot mono">
+  <span><i class="dot"></i>SYSTEM ONLINE · <span id="sync">SYNC --</span></span>
+  <span>DRISHTI · GEMINI LIVE</span>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function tick() {
+  const d = new Date();
+  $("clock").textContent = d.toLocaleTimeString("en-GB");
+  $("date").textContent = d.toLocaleDateString("en-IN", {weekday:"long", day:"numeric", month:"long", year:"numeric"}).toUpperCase();
+}
+tick(); setInterval(tick, 1000);
+
+let sourceFilter = "";
+async function load() {
+  const p = new URLSearchParams();
+  for (const k of ["q","topic","sentiment","language","platform"]) if ($(k).value) p.set(k, $(k).value);
+  if (sourceFilter) p.set("source", sourceFilter);
+  const [items, st] = await Promise.all([
+    fetch("/api/mentions?" + p).then(r => r.json()),
+    fetch("/api/stats").then(r => r.json()),
+  ]);
+  const total = st.total || 0;
+  $("sync").textContent = "SYNC " + new Date().toLocaleTimeString("en-GB") + " · " + total + " ITEMS";
+  for (const k of ["total","negative","positive","neutral"]) {
+    $("s-" + k).textContent = st[k] ?? 0;
+    $("b-" + k).style.width = (k === "total" ? 100 : total ? Math.round((st[k] || 0) * 100 / total) : 0) + "%";
+  }
+  $("list").innerHTML = items.length ? items.map(m => `
+    <div class="item hud ${esc(m.sentiment)}">
+      <a class="open" href="${esc(m.link)}" data-id="${m.id}" data-plat="${esc(m.platform || "news")}">${esc(m.title)}</a>
+      <div class="meta">
+        <span class="tag ${esc(m.sentiment)}">${esc(m.sentiment)}</span>
+        <span class="tag topic">${esc(m.topic)}</span>
+        <span class="tag plat ${esc(m.platform)}">${esc(m.platform || "news")}</span>
+        <span>${esc(m.source)}</span>
+        <span>${m.published ? new Date(m.published).toLocaleString("en-IN") : ""}</span>
+      </div>
+    </div>`).join("") : '<div class="empty">// कोई डेटा नहीं //</div>';
+}
+
+$("list").addEventListener("click", e => {
+  const a = e.target.closest("a.open");
+  if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  e.preventDefault();
+  openViewer(a.dataset.id, a.textContent, a.dataset.plat, a.href);
+});
+
+let viewSeq = 0;
+async function openViewer(id, title, plat, href) {
+  const seq = ++viewSeq, body = $("vw-body");
+  $("viewer").classList.add("show"); 
+  $("vw-title").textContent = title; $("vw-plat").textContent = plat; $("vw-plat").className = "tag plat " + plat;
+  $("vw-orig").href = href; $("vw-orig").style.display = "none"; body.className = "body";
+  body.innerHTML = '<div class="msg mono">// लोड हो रहा है… //</div>';
+  let v;
+  try { v = await fetch("/api/view/" + id).then(r => r.json()); }
+  catch (_) { v = {kind: "link", note: "लोड नहीं हो पाया।"}; }
+  if (seq !== viewSeq) return;
+  if (v.original) $("vw-orig").href = v.original;
+  if (v.kind === "embed") {
+    body.className = "body embed";
+    body.innerHTML = `<iframe src="${esc(v.embed)}" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  } else if (v.kind === "article") {
+    const paras = (v.text || "").split("\n").filter((t, i) => t.trim() && !(i === 0 && (v.title || "").trim().startsWith(t.trim().slice(0, 40)))).map(t => `<p>${esc(t)}</p>`).join("");
+    body.innerHTML = `<div class="article">${v.image ? `<img src="${esc(v.image)}" alt="" referrerpolicy="no-referrer">` : ""}
+      <div class="site mono">${esc(v.site || "")}</div><h2>${esc(v.title || title)}</h2>${paras}</div>`;
+  } else {
+    $("vw-orig").style.display = "";
+    body.innerHTML = `<div class="msg">${esc(v.note || "यह पेज यहाँ नहीं खुल सकता।")}</div>`;
+  }
+}
+/* open an embed URL directly in the centre panel (used for Instagram profiles) */
+function openEmbed(embedUrl, title, plat, fallbackHref) {
+  const seq = ++viewSeq, body = $("vw-body");
+  $("viewer").classList.add("show");
+  $("vw-title").textContent = title; $("vw-plat").textContent = plat; $("vw-plat").className = "tag plat " + plat;
+  $("vw-orig").href = fallbackHref; $("vw-orig").style.display = "none"; body.className = "body embed";
+  body.innerHTML = `<iframe src="${esc(embedUrl)}" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+}
+function closeViewer() {
+  viewSeq++; $("viewer").classList.remove("show"); 
+  $("vw-body").innerHTML = "";
+}
+$("vw-close").addEventListener("click", closeViewer);
+$("viewer").addEventListener("click", e => { if (e.target.id === "viewer") closeViewer(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeViewer(); });
+
+function markActive() {
+  document.querySelectorAll(".stat").forEach(el => el.classList.toggle("active", el.dataset.s === $("sentiment").value));
+}
+document.querySelectorAll(".stat").forEach(el => el.addEventListener("click", () => {
+  $("sentiment").value = el.dataset.s; markActive(); load();
+}));
+$("sentiment").addEventListener("change", markActive);
+markActive();
+["topic","sentiment","language","platform"].forEach(k => $(k).addEventListener("change", load));
+let t; $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(load, 300); });
+$("refresh").addEventListener("click", async () => {
+  $("refresh").disabled = true; $("refresh").textContent = "लोड हो रहा है...";
+  await fetch("/api/collect", {method:"POST"});
+  await load();
+  $("refresh").disabled = false; $("refresh").textContent = "अभी अपडेट करें";
+});
+load(); setInterval(load, 60000);
+
+
+/* ---------- CISF accounts ---------- */
+const nf = n => n == null ? "—" : n >= 1e5 ? (n / 1e5).toFixed(1) + " लाख" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(n);
+function setView(v) {
+  document.body.classList.toggle("v-accounts", v === "acc");
+  $("tab-news").classList.toggle("active", v !== "acc");
+  $("tab-acc").classList.toggle("active", v === "acc");
+  if (v === "acc") loadAccounts();
+}
+async function loadAccounts() {
+  const p = new URLSearchParams();
+  if ($("acc-q").value) p.set("q", $("acc-q").value);
+  if ($("acc-w").checked) p.set("watched", 1);
+  const d = await fetch("/api/accounts?" + p).then(r => r.json());
+  $("acc-count").textContent = `कुल ${d.total} अकाउंट मिले जिनके username/नाम में CISF है · ${d.watching} को Watch पर रखा है। ` +
+    "ये सार्वजनिक Instagram अकाउंट हैं: कौन असली CISF का है और कौन सिर्फ़ नाम रखकर बैठा है, यह आप खुद प्रोफ़ाइल खोलकर जाँचिए।";
+  $("acc-list").innerHTML = d.items.length ? d.items.map(a => `
+    <div class="acc hud ${a.watched ? "w" : ""}">
+      <div class="who">
+        <div class="un">@${esc(a.username)}</div>
+        <div class="fn">${esc(a.full_name || "")}</div>
+        <div class="chips">
+          <span class="tag">👥 ${nf(a.followers)}</span>
+          <span class="tag ${a.private ? "negative" : "positive"}">${a.private == null ? "?" : a.private ? "🔒 Private" : "🌐 Public"}</span>
+          ${a.verified ? '<span class="tag topic">✔ Verified</span>' : ""}
+          <span class="tag plat">${a.posts} पोस्ट हमारे पास</span>
+          ${a.last_post ? `<span class="tag">आख़िरी: ${new Date(a.last_post).toLocaleDateString("en-IN")}</span>` : ""}
+        </div>
+      </div>
+      <div class="btns">
+        <button class="wbtn ${a.watched ? "on" : ""}" data-u="${esc(a.username)}" data-w="${a.watched ? 0 : 1}">${a.watched ? "★ Watching" : "☆ Watch"}</button>
+        <button class="ibtn" data-u="${esc(a.username)}">Instagram</button>
+        ${a.posts ? `<button class="pbtn" data-u="${esc(a.username)}">पोस्ट देखें</button>` : ""}
+      </div>
+    </div>`).join("") : '<div class="empty">// अभी कोई अकाउंट नहीं //</div>';
+}
+$("acc-list").addEventListener("click", async e => {
+  const w = e.target.closest(".wbtn"), pb = e.target.closest(".pbtn"), ib = e.target.closest(".ibtn");
+  if (w) {
+    await fetch(`/api/accounts/${encodeURIComponent(w.dataset.u)}/watch`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({watched: w.dataset.w === "1"})});
+    loadAccounts();
+  } else if (ib) {
+    const u = ib.dataset.u;
+    openEmbed(`https://www.instagram.com/${encodeURIComponent(u)}/embed/`, "@" + u, "instagram", `https://www.instagram.com/${encodeURIComponent(u)}/`);
+  } else if (pb) {
+    sourceFilter = "@" + pb.dataset.u; clearFilters();
+    $("srctext").textContent = "सिर्फ़ इनकी पोस्ट: " + sourceFilter; $("srcchip").classList.add("show");
+    setView("news"); load();
+  }
+});
+function clearFilters() { for (const k of ["q","topic","sentiment","language","platform"]) $(k).value = ""; markActive(); }
+$("srcx").addEventListener("click", () => { sourceFilter = ""; $("srcchip").classList.remove("show"); load(); });
+$("tab-news").addEventListener("click", () => setView("news"));
+$("tab-acc").addEventListener("click", () => setView("acc"));
+$("acc-w").addEventListener("change", loadAccounts);
+let at; $("acc-q").addEventListener("input", () => { clearTimeout(at); at = setTimeout(loadAccounts, 300); });
+$("acc-refresh").addEventListener("click", async () => {
+  const b = $("acc-refresh"); b.disabled = true; b.textContent = "खोज चालू है… (10-20 मिनट)";
+  try { await fetch("/api/accounts/refresh", {method: "POST"}); } catch (_) {}
+  const timer = setInterval(async () => {
+    loadAccounts();
+    const st = await fetch("/api/accounts/status").then(r => r.json()).catch(() => ({running: true}));
+    if (!st.running) { clearInterval(timer); b.disabled = false; b.textContent = "🔍 नए अकाउंट खोजें"; }
+  }, 20000);
+});
+
+/* ---------- Voice assistant (Gemini Live) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const WAKE = /drishti|dristi|drishthi|trishti|dishti|दृष्टि|दृष्टी|द्रष्टि|दृस्टि|दिष्टि|दृष्ठि/i;
+let standby = false, live = null, wakeRec = null, wakeTimer = null;
+
+const vshow = (state, you, bot) => {
+  if (state != null) { $("v-state").textContent = state; setAvState(state); }
+  if (you != null) $("v-you").textContent = you;
+  if (bot != null) $("v-bot").textContent = bot;
+};
+const micOff = () => { $("mic").classList.remove("on"); $("mic").textContent = "🎤 Voice चालू करें"; };
+
+/* ---- wake word: "Hey Drishti" ---- */
+function startWake() {
+  stopWake();
+  if (!standby || live) return;
+  const r = wakeRec = new SR();
+  r.lang = "hi-IN"; r.continuous = true; r.interimResults = false;
+  r.onresult = e => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (!e.results[i].isFinal) continue;
+      const text = e.results[i][0].transcript.trim();
+      if (WAKE.test(text)) { stopWake(); startLive(); return; }
+      vshow("Standby — बोलिए: Hey Drishti", "सुना: " + text, null);
+    }
+  };
+  r.onend = () => { if (wakeRec === r) { wakeRec = null; if (standby && !live) wakeTimer = setTimeout(startWake, 250); } };
+  r.onerror = e => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      standby = false; micOff();
+      vshow("Mic blocked", null, "माइक की permission दीजिए (address bar में 🔒 पर क्लिक करके)।");
+    }
+  };
+  try { r.start(); } catch (_) {}
+}
+function stopWake() {
+  clearTimeout(wakeTimer);
+  if (wakeRec) { const r = wakeRec; wakeRec = null; r.onend = null; r.onresult = null; try { r.abort(); } catch (_) {} }
+}
+
+/* ---- live session ---- */
+const workletCode = `
+class Cap extends AudioWorkletProcessor {
+  process(inputs) { const ch = inputs[0][0]; if (ch) this.port.postMessage(ch.slice(0)); return true; }
+}
+registerProcessor("cap", Cap);`;
+
+async function startLive() {
+  if (live) return;
+  const s = live = { ws: null, stream: null, inCtx: null, outCtx: null, next: 0, srcs: [], closed: false, you: "", bot: "" };
+  vshow("Connecting…", "", "");
+  try {
+    s.stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1}});
+  } catch (_) {
+    live = null; standby = false; micOff();
+    vshow("Mic blocked", null, "माइक की permission दीजिए (address bar में 🔒 पर क्लिक करके)।"); return;
+  }
+  s.outCtx = new AudioContext({sampleRate: 24000});
+  s.anOut = s.outCtx.createAnalyser(); s.anOut.fftSize = 1024; s.anOut.connect(s.outCtx.destination);
+  s.inCtx = new AudioContext({sampleRate: 16000});
+  await s.outCtx.resume(); await s.inCtx.resume();
+  await s.inCtx.audioWorklet.addModule(URL.createObjectURL(new Blob([workletCode], {type: "application/javascript"})));
+
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  s.ws = new WebSocket(`${proto}://${location.host}/ws/voice`);
+  s.ws.binaryType = "arraybuffer";
+
+  s.ws.onopen = () => {
+    const src = s.inCtx.createMediaStreamSource(s.stream);
+    s.anIn = s.inCtx.createAnalyser(); s.anIn.fftSize = 1024; src.connect(s.anIn);
+    const node = new AudioWorkletNode(s.inCtx, "cap");
+    node.port.onmessage = e => {
+      if (s.ws.readyState !== 1) return;
+      const f = e.data, out = new Int16Array(f.length);
+      for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); out[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
+      s.ws.send(out.buffer);
+    };
+    src.connect(node);
+    s.node = node;
+  };
+
+  s.ws.onmessage = ev => {
+    if (typeof ev.data !== "string") return playChunk(s, ev.data);
+    const m = JSON.parse(ev.data);
+    if (m.type === "ready") vshow("Listening…", null, null);
+    else if (m.type === "you") { s.you += m.text; vshow(null, "आप: " + s.you, null); }
+    else if (m.type === "bot") { s.bot += m.text; vshow("Speaking…", null, s.bot); }
+    else if (m.type === "turn_complete") { s.you = ""; s.bot = ""; vshow("Listening…", null, null); }
+    else if (m.type === "interrupted") { stopPlayback(s); s.bot = ""; }
+    else if (m.type === "filters") applyFilters(m.filters);
+    else if (m.type === "open") openViewer(m.id, m.title, m.platform, m.link);
+    else if (m.type === "refresh") load();
+    else if (m.type === "error") { vshow("Error", null, m.text); endLive(); }
+    else if (m.type === "end") setTimeout(endLive, Math.max(300, (s.next - s.outCtx.currentTime) * 1000 + 300));
+  };
+  s.ws.onclose = () => endLive();
+  s.ws.onerror = () => vshow("Error", null, "सर्वर से जुड़ नहीं पाया।");
+}
+
+function playChunk(s, buf) {
+  const i16 = new Int16Array(buf), f32 = new Float32Array(i16.length);
+  for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 32768;
+  const ab = s.outCtx.createBuffer(1, f32.length, 24000);
+  ab.copyToChannel(f32, 0);
+  const src = s.outCtx.createBufferSource();
+  src.buffer = ab; src.connect(s.anOut);
+  const t = Math.max(s.outCtx.currentTime + 0.05, s.next);
+  src.start(t); s.next = t + ab.duration;
+  s.srcs.push(src); src.onended = () => { s.srcs = s.srcs.filter(x => x !== src); };
+}
+function stopPlayback(s) {
+  s.srcs.forEach(x => { try { x.stop(); } catch (_) {} });
+  s.srcs = []; s.next = 0;
+}
+
+function applyFilters(f) {
+  for (const k of ["topic", "sentiment", "platform", "language", "q"]) $(k).value = f[k] || "";
+  markActive(); load();
+}
+
+function endLive() {
+  const s = live;
+  if (!s || s.closed) return;
+  s.closed = true; live = null;
+  try { s.ws.onclose = null; if (s.ws.readyState === 1) s.ws.send("stop"); s.ws.close(); } catch (_) {}
+  try { s.node && s.node.disconnect(); } catch (_) {}
+  try { s.stream && s.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
+  try { s.inCtx && s.inCtx.close(); } catch (_) {}
+  stopPlayback(s); try { s.outCtx && s.outCtx.close(); } catch (_) {}
+  if (standby) { vshow("Standby — बोलिए: Hey Drishti", "", ""); setTimeout(startWake, 400); }
+}
+
+$("mic").addEventListener("click", () => {
+  if (!SR) { vshow("Not supported", null, "यह browser voice सुनना सपोर्ट नहीं करता। कृपया Google Chrome में खोलिए।"); return; }
+  if (standby || live) {
+    standby = false; stopWake(); endLive(); micOff();
+    $("voicebox").classList.remove("show"); return;
+  }
+  standby = true; $("mic").classList.add("on"); $("mic").textContent = "🎤 सुन रहा हूँ… (बंद करें)";
+  vshow("Standby — बोलिए: Hey Drishti", "", "");
+  startWake();
+});
+
+/* ---------- Holographic head + level meter ---------- */
+function rmsOf(an) {
+  if (!an) return 0;
+  const b = new Float32Array(an.fftSize); an.getFloatTimeDomainData(b);
+  let s = 0; for (let i = 0; i < b.length; i++) s += b[i] * b[i];
+  return Math.sqrt(s / b.length);
+}
+const av = { state: "STANDBY", setState(x) { this.state = x; } };
+function setAvState(s) {
+  av.setState(/^Standby/.test(s) ? "STANDBY" : /^(Connecting|Processing)/.test(s) ? "THINKING"
+    : /^Listening/.test(s) ? "LISTENING" : /^Speaking/.test(s) ? "SPEAKING"
+    : /^(Mic blocked|Error|Not supported)/.test(s) ? "STANDBY" : av.state);
+}
+
+(function waveLoop() {
+  const cv = $("wave"), ctx = cv.getContext("2d");
+  const N = 64, vals = new Float32Array(N);
+  let tt = 0;
+  function frame() {
+    const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+    if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    tt += 0.05;
+    const lvl = live ? Math.max(rmsOf(live.anOut) * 5, rmsOf(live.anIn) * 4) : 0;
+    const bw = W / N;
+    for (let i = 0; i < N; i++) {
+      const ripple = 0.5 + 0.5 * Math.sin(tt * 2 + i * 0.45) * Math.sin(tt * 0.7 + i * 0.13);
+      const target = 0.06 + Math.min(1, lvl) * (0.35 + 0.65 * ripple);
+      vals[i] += (target - vals[i]) * 0.3;
+      const h = Math.max(2, vals[i] * H);
+      ctx.fillStyle = `rgba(25,211,240,${0.25 + 0.6 * vals[i]})`;
+      ctx.fillRect(i * bw + 1, (H - h) / 2, Math.max(1, bw - 2), h);
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ---------- DATA CORE: the backend, shown like a sci-fi control room ---------- */
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("pipe"), term = $("term");
+  const SRC = [["news", "NEWS", "#19d3f0"], ["youtube", "YOUTUBE", "#ff6b6b"], ["reddit", "REDDIT", "#ff9a3d"], ["instagram", "INSTAGRAM", "#ff7ac6"], ["facebook", "FACEBOOK", "#6ea8ff"]];
+  const STAGES = [["COLLECTOR", 250], ["GEMINI AI", 365], ["DATABASE", 480], ["DASHBOARD", 585]];
+  const nodes = {}, links = [];
+  const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); (p || svg).appendChild(e); return e; };
+
+  // sources (left column)
+  SRC.forEach(([k, label, col], i) => {
+    const y = 18 + i * 34;
+    const g = el("g", {class: "node"}); el("rect", {x: 8, y: y - 11, width: 84, height: 22}, g);
+    const t = el("text", {x: 18, y: y + 3}, g); t.textContent = label;
+    el("circle", {cx: 84, cy: y, r: 2.6, fill: col}, g);
+    nodes[k] = {g, x: 92, y, col};
+  });
+  // stages
+  STAGES.forEach(([label, x]) => {
+    const g = el("g", {class: "node"}); el("rect", {x: x - 44, y: 66, width: 88, height: 44}, g);
+    const t = el("text", {x: x, y: 91, "text-anchor": "middle"}, g); t.textContent = label;
+    nodes[label] = {g, x: x - 44, xr: x + 44, y: 88};
+  });
+  // links: sources -> collector -> ai -> db -> dashboard
+  const path = (a, b) => `M${a[0]},${a[1]} C${(a[0] + b[0]) / 2},${a[1]} ${(a[0] + b[0]) / 2},${b[1]} ${b[0]},${b[1]}`;
+  SRC.forEach(([k]) => links.push(el("path", {class: "link", d: path([92, nodes[k].y], [nodes.COLLECTOR.x, 88])})));
+  for (let i = 0; i < STAGES.length - 1; i++) links.push(el("path", {class: "link", d: path([nodes[STAGES[i][0]].xr, 88], [nodes[STAGES[i + 1][0]].x, 88])}));
+  const fullPath = k => `M92,${nodes[k].y} L${nodes.COLLECTOR.x},88 L${nodes.COLLECTOR.xr},88 L${nodes["GEMINI AI"].x},88 L${nodes["GEMINI AI"].xr},88 L${nodes.DATABASE.x},88 L${nodes.DATABASE.xr},88 L${nodes.DASHBOARD.x},88`;
+  const pk = [];     // moving packets
+
+  function fire(platform, colour) {
+    const k = nodes[platform] ? platform : "news", p = el("path", {d: fullPath(k), fill: "none", stroke: "none"});
+    const c = el("circle", {class: "pkt", r: 3.2, fill: colour || nodes[k].col, style: "color:" + (colour || nodes[k].col)});
+    pk.push({p, c, len: p.getTotalLength(), t0: performance.now(), dur: 2600, k});
+    nodes[k].g.classList.add("hot"); setTimeout(() => nodes[k].g.classList.remove("hot"), 700);
+  }
+  const lit = {};
+  function light(name) { const n = nodes[name]; n.g.classList.add("hot"); clearTimeout(lit[name]); lit[name] = setTimeout(() => n.g.classList.remove("hot"), 500); }
+  (function anim(now) {
+    for (let i = pk.length - 1; i >= 0; i--) {
+      const q = pk[i], f = (now - q.t0) / q.dur;
+      if (f >= 1) { q.c.remove(); q.p.remove(); pk.splice(i, 1); light("DASHBOARD"); continue; }
+      const pt = q.p.getPointAtLength(f * q.len); q.c.setAttribute("cx", pt.x); q.c.setAttribute("cy", pt.y);
+      for (const [nm, x0, x1] of [["COLLECTOR", nodes.COLLECTOR.x, nodes.COLLECTOR.xr], ["GEMINI AI", nodes["GEMINI AI"].x, nodes["GEMINI AI"].xr], ["DATABASE", nodes.DATABASE.x, nodes.DATABASE.xr]]) if (pt.x > x0 && pt.x < x1) light(nm);
+    }
+    requestAnimationFrame(anim);
+  })(performance.now());
+
+  /* ---- terminal ---- */
+  const hhmmss = () => new Date().toLocaleTimeString("en-GB");
+  const clip = (s, n) => { s = (s || "").replace(/\s+/g, " "); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+  let lines = 0, ev = [], total = 0, ai = 0, neg = 0;
+  function push(html) {
+    const d = document.createElement("div"); d.innerHTML = html; term.appendChild(d); lines++;
+    while (term.children.length > 40) term.removeChild(term.firstChild);
+    ev.push(performance.now());
+  }
+  const hex = n => Array.from({length: n}, () => Math.floor(Math.random() * 256).toString(16).padStart(2, "0")).join(" ");
+  const sentCls = s => s === "negative" ? "neg" : s === "positive" ? "pos" : "neu";
+
+  const queue = []; let seen = new Set(), primed = false;
+  async function refill() {
+    try {
+      const items = await fetch("/api/mentions?limit=40").then(r => r.json());
+      const fresh = items.filter(m => !seen.has(m.id));
+      items.forEach(m => seen.add(m.id));
+      // first load: replay the latest ones oldest->newest; later: only what is new
+      (primed ? fresh : items.slice(0, 18)).reverse().forEach(m => queue.push(m));
+      primed = true;
+    } catch (_) {}
+  }
+  refill(); setInterval(refill, 20000);
+
+  function playItem(m) {
+    const plat = m.platform || "news", col = (SRC.find(s => s[0] === plat) || [])[2];
+    push(`<span class="ts">[${hhmmss()}]</span> <span class="tag-i">INGEST  </span> <span class="dim">▸</span> ${plat.padEnd(9, " ")} <span class="dim">▸</span> ${esc(m.topic)} <span class="dim">▸</span> ${esc(clip(m.title, 56))}`);
+    fire(plat, col); total++;
+    setTimeout(() => { push(`<span class="ts">[${hhmmss()}]</span> <span class="tag-c">CLASSIFY</span> <span class="dim">▸</span> gemini-flash <span class="dim">▸</span> <span class="${sentCls(m.sentiment)}">${esc((m.sentiment || "").toUpperCase())}</span>`); ai++; if (m.sentiment === "negative") neg++; }, 900);
+    setTimeout(() => { push(`<span class="ts">[${hhmmss()}]</span> <span class="tag-s">STORE   </span> <span class="dim">▸</span> sqlite <span class="dim">▸</span> row #${m.id} <span class="pos">✓</span>`); foot(); }, 1800);
+  }
+  const SYS = [
+    () => `<span class="ts">[${hhmmss()}]</span> <span class="tag-y">NET     </span> <span class="dim">▸</span> GET news.google.com/rss <span class="dim">▸</span> 200 OK ${(0.2 + Math.random() * 0.8).toFixed(2)}s`,
+    () => `<span class="ts">[${hhmmss()}]</span> <span class="tag-y">NET     </span> <span class="dim">▸</span> GET youtube.googleapis.com <span class="dim">▸</span> 200 OK ${(0.2 + Math.random() * 0.6).toFixed(2)}s`,
+    () => `<span class="ts">[${hhmmss()}]</span> <span class="tag-y">AI      </span> <span class="dim">▸</span> batch=40 titles <span class="dim">▸</span> json ok <span class="dim">▸</span> ${(1.1 + Math.random() * 2).toFixed(1)}s`,
+    () => `<span class="ts">[${hhmmss()}]</span> <span class="tag-y">SYS     </span> <span class="dim">▸</span> dedupe <span class="dim">▸</span> ${Math.floor(Math.random() * 40)} duplicates dropped`,
+    () => `<span class="ts">[${hhmmss()}]</span> <span class="hex">${hex(16)}</span>`,
+    () => `<span class="ts">[${hhmmss()}]</span> <span class="hex">${hex(16)}</span>`,
+  ];
+  let tick = 0;
+  setInterval(() => {
+    tick++;
+    if (queue.length && tick % 2 === 0) playItem(queue.shift());
+    else if (tick % 3 === 0) push(SYS[Math.floor(Math.random() * SYS.length)]());
+  }, 650);
+
+  /* ---- counters ---- */
+  const t0 = Date.now();
+  function foot() { $("cf-total").textContent = total; $("cf-ai").textContent = ai; $("cf-neg").textContent = neg; }
+  setInterval(() => {
+    const now = performance.now(); ev = ev.filter(x => now - x < 5000);
+    $("core-rate").textContent = (ev.length / 5).toFixed(1) + " EV/S";
+    const s = Math.floor((Date.now() - t0) / 1000); $("cf-up").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  }, 1000);
+
+  /* ---- matrix rain ---- */
+  const cv = $("rain"), cx = cv.getContext("2d"); let cols = [], fs = 14;
+  function rainFrame() {
+    const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+    if (!W || !H) return requestAnimationFrame(rainFrame);
+    if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cols = []; }
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.floor(W / fs); while (cols.length < n) cols.push(Math.random() * H / fs);
+    cx.fillStyle = "rgba(1,10,16,.16)"; cx.fillRect(0, 0, W, H);
+    cx.font = fs + "px Consolas, monospace";
+    for (let i = 0; i < n; i++) {
+      const CH = "0123456789ABCDEFアイウエオカキクケコ"; const ch = CH[Math.floor(Math.random() * CH.length)];
+      cx.fillStyle = Math.random() > 0.97 ? "rgba(200,255,255,.9)" : "rgba(25,211,240,.55)";
+      cx.fillText(ch, i * fs, cols[i] * fs);
+      if (cols[i] * fs > H && Math.random() > 0.975) cols[i] = 0; cols[i] += 0.5;
+    }
+    setTimeout(() => requestAnimationFrame(rainFrame), 50);
+  }
+  rainFrame();
+})();
+</script>
+</body>
+</html>

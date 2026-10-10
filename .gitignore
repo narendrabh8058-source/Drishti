@@ -1,0 +1,16 @@
+# secrets: NEVER upload these
+.env
+.env.*
+!.env.example
+
+# data and local leftovers
+*.db
+*.db-wal
+*.db-shm
+*.db.bak
+*.sqlite*
+*.zip
+__pycache__/
+*.pyc
+.venv/
+venv/

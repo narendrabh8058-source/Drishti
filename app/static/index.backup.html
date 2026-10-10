@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drishti</title>
+<style>
+  :root { --bg:#02070d; --panel:rgba(4,22,36,.72); --cy:#2de2ff; --cy2:#0aa6c9; --text:#cfefff; --muted:#5f8ca3; --line:rgba(45,226,255,.22);
+          --pos:#3dffa6; --neg:#ff4d5e; --neu:#7fa6bd; --warn:#ffb020; }
+  * { box-sizing: border-box; }
+  html, body { height:100%; }
+  body { margin:0; font-family: "Rajdhani", "Segoe UI", system-ui, sans-serif; color:var(--text); background:var(--bg);
+         background-image:
+           radial-gradient(1200px 600px at 70% -10%, rgba(10,166,201,.22), transparent 60%),
+           radial-gradient(900px 500px at 0% 100%, rgba(10,100,160,.2), transparent 60%),
+           linear-gradient(rgba(45,226,255,.045) 1px, transparent 1px),
+           linear-gradient(90deg, rgba(45,226,255,.045) 1px, transparent 1px);
+         background-size:auto, auto, 42px 42px, 42px 42px;
+         display:grid; grid-template-columns:290px 1fr; }
+  body::after { content:""; position:fixed; inset:0; pointer-events:none; z-index:50;
+         background:repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px); mix-blend-mode:multiply; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-thumb { background:var(--cy2); border-radius:6px; }
+  .mono { font-family: "Consolas","Courier New",monospace; letter-spacing:1px; }
+
+  /* HUD panel with corner brackets */
+  .hud { position:relative; background:var(--panel); border:1px solid var(--line); backdrop-filter:blur(6px); }
+  .hud::before, .hud::after { content:""; position:absolute; width:12px; height:12px; border:2px solid var(--cy); pointer-events:none; filter:drop-shadow(0 0 4px var(--cy)); }
+  .hud::before { top:-1px; left:-1px; border-right:0; border-bottom:0; }
+  .hud::after { bottom:-1px; right:-1px; border-left:0; border-top:0; }
+
+  aside { border-right:1px solid var(--line); padding:20px 16px; display:flex; flex-direction:column; gap:18px; height:100vh; position:sticky; top:0; background:rgba(2,12,20,.6); }
+  .brand { display:flex; align-items:center; gap:14px; }
+  .reactor { width:54px; height:54px; position:relative; flex:none; }
+  .reactor i { position:absolute; border-radius:50%; border:2px solid var(--cy); inset:0; filter:drop-shadow(0 0 6px var(--cy)); }
+  .reactor i:nth-child(1) { border-style:dashed; animation:spin 14s linear infinite; }
+  .reactor i:nth-child(2) { inset:8px; border-color:var(--cy2); border-top-color:transparent; border-bottom-color:transparent; animation:spin 4s linear infinite reverse; }
+  .reactor i:nth-child(3) { inset:19px; background:radial-gradient(circle,#fff,var(--cy) 60%); border:0; animation:glow 2.4s ease-in-out infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes glow { 50% { box-shadow:0 0 22px 6px var(--cy); } 0%,100% { box-shadow:0 0 10px 2px var(--cy); } }
+  .brand h1 { margin:0; font-size:24px; letter-spacing:5px; text-transform:uppercase; color:#fff; text-shadow:0 0 12px var(--cy); }
+  .brand small { display:block; color:var(--muted); font-size:11px; letter-spacing:2px; margin-top:2px; text-transform:uppercase; }
+
+  aside label { font-size:11px; text-transform:uppercase; letter-spacing:2.5px; color:var(--cy); display:block; margin-bottom:6px; }
+  .group { display:flex; flex-direction:column; }
+
+  input, select, button { font:inherit; font-size:15px; color:var(--text); background:rgba(3,18,30,.85); border:1px solid var(--line);
+                          border-radius:2px; padding:9px 12px; outline:none; transition:.15s; width:100%; }
+  input:focus, select:focus { border-color:var(--cy); box-shadow:0 0 12px rgba(45,226,255,.35), inset 0 0 8px rgba(45,226,255,.12); }
+  select { appearance:none; cursor:pointer; }
+  option { background:#04141f; }
+  button { cursor:pointer; text-transform:uppercase; letter-spacing:3px; font-weight:700; color:var(--cy); background:rgba(45,226,255,.08); border:1px solid var(--cy);
+           box-shadow:0 0 14px rgba(45,226,255,.3), inset 0 0 12px rgba(45,226,255,.12); }
+  button:hover { background:rgba(45,226,255,.22); color:#fff; box-shadow:0 0 22px rgba(45,226,255,.6); }
+  button:disabled { opacity:.55; cursor:wait; }
+  .spacer { flex:1; }
+  .live { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:2px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--pos); box-shadow:0 0 10px var(--pos); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity:.25; } }
+
+  main { padding:24px 34px 40px; max-width:1040px; width:100%; margin:0 auto; }
+  .top { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+  .hello h2 { margin:0; font-size:30px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#fff; text-shadow:0 0 16px rgba(45,226,255,.7); }
+  .hello p { color:var(--muted); margin:4px 0 0; font-size:14px; letter-spacing:1px; }
+  .clock { text-align:right; color:var(--cy); font-size:22px; text-shadow:0 0 10px var(--cy); }
+  .clock small { display:block; color:var(--muted); font-size:11px; text-shadow:none; }
+
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+  .stat { padding:14px 16px; cursor:pointer; transition:.18s; --c:var(--cy); }
+  .stat:hover { transform:translateY(-2px); border-color:var(--c); }
+  .stat.active { border-color:var(--c); box-shadow:0 0 22px color-mix(in srgb, var(--c) 45%, transparent), inset 0 0 18px color-mix(in srgb, var(--c) 18%, transparent); }
+  .stat span { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:2.5px; }
+  .stat b { display:block; font-size:40px; font-weight:700; color:var(--c); text-shadow:0 0 14px var(--c); line-height:1.15; margin-top:4px; }
+  .stat::before, .stat::after { border-color:var(--c); filter:drop-shadow(0 0 4px var(--c)); }
+  .bar { height:3px; background:rgba(255,255,255,.07); margin-top:8px; }
+  .bar i { display:block; height:100%; width:0; background:var(--c); box-shadow:0 0 8px var(--c); transition:width .6s; }
+
+  .item { padding:14px 18px; margin-bottom:12px; transition:.18s; border-left:3px solid var(--neu); }
+  .item.negative { border-left-color:var(--neg); } .item.positive { border-left-color:var(--pos); }
+  .item:hover { background:rgba(8,40,62,.8); border-color:var(--cy); box-shadow:0 0 18px rgba(45,226,255,.18); transform:translateX(3px); }
+  .item a { color:#e8f8ff; text-decoration:none; font-weight:600; line-height:1.45; font-size:17px; }
+  .item a:hover { color:var(--cy); text-shadow:0 0 8px var(--cy); }
+  .meta { color:var(--muted); font-size:12px; margin-top:9px; display:flex; gap:9px; flex-wrap:wrap; align-items:center; letter-spacing:.5px; }
+  .tag { padding:2px 9px; font-size:11px; text-transform:uppercase; letter-spacing:1.5px; border:1px solid var(--line); color:var(--muted); }
+  .tag.negative { color:var(--neg); border-color:var(--neg); box-shadow:0 0 8px rgba(255,77,94,.3); }
+  .tag.positive { color:var(--pos); border-color:var(--pos); box-shadow:0 0 8px rgba(61,255,166,.3); }
+  .tag.topic { color:var(--cy); border-color:var(--cy2); }
+  .tag.plat { color:#b9a8ff; border-color:#6f5bd6; }
+  .tag.plat.youtube { color:#ff8d8d; border-color:#c93a3a; }
+  .tag.plat.reddit { color:#ffb27a; border-color:#d5671e; }
+  .tag.plat.instagram { color:#ff9ad0; border-color:#c43e8f; }
+  .tag.plat.facebook { color:#8fbaff; border-color:#3a72d4; }
+  .tag.plat.news { color:#9fe7ff; border-color:var(--cy2); }
+  #mic.on { color:#02070d; background:var(--cy); animation:micpulse 1.4s infinite; }
+  @keyframes micpulse { 50% { box-shadow:0 0 30px var(--cy); } }
+  #voicebox { position:fixed; right:18px; bottom:18px; width:min(380px, calc(100vw - 36px)); padding:12px 14px; z-index:60; display:none; font-size:15px; }
+  #voicebox.show { display:block; }
+  #voicebox .st { color:var(--cy); font-size:11px; letter-spacing:2.5px; text-transform:uppercase; margin-bottom:6px; }
+  #voicebox .you { color:var(--muted); font-size:13px; margin-bottom:4px; }
+  #voicebox .bot { color:#fff; line-height:1.45; }
+  #viewer { position:fixed; inset:0; z-index:80; display:none; background:rgba(1,6,12,.82); backdrop-filter:blur(5px); padding:3vh 3vw; }
+  #viewer.show { display:flex; }
+  #viewer .box { margin:auto; width:min(1000px,100%); height:100%; max-height:94vh; display:flex; flex-direction:column; background:rgba(3,16,28,.96); }
+  #viewer .bar { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); }
+  #viewer .bar .ttl { flex:1; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff; }
+  #viewer .bar a, #viewer .bar button { width:auto; padding:6px 12px; font-size:12px; letter-spacing:1.5px; text-decoration:none; color:var(--cy); border:1px solid var(--cy); background:rgba(45,226,255,.08); text-transform:uppercase; cursor:pointer; box-shadow:none; white-space:nowrap; }
+  #viewer .body { flex:1; overflow:auto; display:flex; justify-content:center; }
+  #viewer iframe { width:100%; height:100%; border:0; background:#fff; }
+  #viewer .body.embed { background:#000; padding:0; }
+  #viewer .article { max-width:760px; padding:22px 26px 40px; line-height:1.8; font-size:18px; color:#d8f1ff; }
+  #viewer .article img { width:100%; max-height:380px; object-fit:cover; margin-bottom:16px; border:1px solid var(--line); }
+  #viewer .article h2 { margin:0 0 6px; font-size:26px; color:#fff; line-height:1.35; }
+  #viewer .article .site { color:var(--cy); font-size:12px; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; }
+  #viewer .article p { margin:0 0 14px; }
+  #viewer .msg { margin:auto; text-align:center; color:var(--muted); padding:30px; letter-spacing:1px; max-width:480px; line-height:1.7; }
+  .item a.open { cursor:pointer; }
+  .tabs { display:flex; gap:10px; margin-bottom:18px; }
+  .tabs button { width:auto; padding:8px 18px; font-size:13px; opacity:.6; }
+  .tabs button.active { opacity:1; background:rgba(45,226,255,.22); color:#fff; }
+  #accounts { display:none; }
+  body.v-accounts #accounts { display:block; }
+  body.v-accounts .stats, body.v-accounts #list, body.v-accounts #srcchip { display:none !important; }
+  #srcchip { display:none; margin-bottom:12px; padding:8px 12px; align-items:center; gap:10px; color:var(--cy); }
+  #srcchip.show { display:flex; }
+  #srcchip button { width:auto; padding:3px 10px; font-size:12px; letter-spacing:1px; }
+  .acc-head { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+  .acc-head input[type=text] { flex:1; min-width:180px; }
+  .acc-head label { color:var(--muted); font-size:13px; white-space:nowrap; display:flex; gap:6px; align-items:center; }
+  .acc-head input[type=checkbox] { width:auto; }
+  .acc-head button { width:auto; padding:8px 14px; font-size:12px; }
+  .acc-note { color:var(--muted); font-size:13px; margin-bottom:14px; line-height:1.6; }
+  .acc { padding:12px 16px; margin-bottom:10px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .acc.w { border-color:var(--warn); box-shadow:0 0 14px rgba(255,176,32,.18); }
+  .acc .who { flex:1; min-width:200px; }
+  .acc .un { font-size:18px; font-weight:700; color:#fff; letter-spacing:.5px; }
+  .acc .fn { color:var(--muted); font-size:13px; margin-top:2px; }
+  .acc .chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:7px; }
+  .acc .btns { display:flex; gap:8px; flex-wrap:wrap; }
+  .acc .btns button, .acc .btns a { width:auto; padding:6px 12px; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; text-decoration:none; color:var(--cy); border:1px solid var(--cy); background:rgba(45,226,255,.08); cursor:pointer; box-shadow:none; }
+  .acc .btns .wbtn.on { color:#02070d; background:var(--warn); border-color:var(--warn); }
+  .empty { color:var(--muted); text-align:center; padding:60px; letter-spacing:3px; text-transform:uppercase; }
+
+  @media (max-width:860px){ body{ grid-template-columns:1fr; } aside{ position:static; height:auto; } main{ padding:18px 14px; } .stats{ grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand">
+    <div class="reactor"><i></i><i></i><i></i></div>
+    <div><h1>Drishti</h1><small>CISF &amp; ISRO · Media Intel</small></div>
+  </div>
+  <div class="group"><label>// खोजें</label><input id="q" placeholder="SEARCH QUERY..."></div>
+  <div class="group"><label>// विषय</label>
+    <select id="topic"><option value="">CISF + ISRO</option><option>CISF</option><option>ISRO</option></select></div>
+  <div class="group"><label>// Sentiment</label>
+    <select id="sentiment"><option value="">सभी sentiment</option><option value="negative">Negative</option><option value="positive">Positive</option><option value="neutral">Neutral</option></select></div>
+  <div class="group"><label>// Platform</label>
+    <select id="platform"><option value="">सभी platform</option><option value="news">News</option><option value="youtube">YouTube</option><option value="reddit">Reddit</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option></select></div>
+  <div class="group"><label>// भाषा</label>
+    <select id="language"><option value="">सभी भाषा</option><option value="hi">हिंदी</option><option value="en">English</option></select></div>
+  <div class="spacer"></div>
+  <button id="mic">🎤 Voice चालू करें</button>
+  <button id="refresh">अभी अपडेट करें</button>
+  <div class="live"><span class="dot"></span> Systems online</div>
+</aside>
+<main>
+  <div class="top">
+    <div class="hello"><h2>Welcome</h2><p>CISF और ISRO से जुड़ी ताज़ा खबरें · sentiment विश्लेषण</p></div>
+    <div class="clock mono"><span id="clock">--:--:--</span><small id="date"></small></div>
+  </div>
+  <div class="tabs">
+    <button id="tab-news" class="active">📰 खबरें</button>
+    <button id="tab-acc">👤 CISF अकाउंट</button>
+  </div>
+  <div class="hud" id="srcchip"><span id="srctext"></span><button id="srcx">✕ हटाएँ</button></div>
+  <div id="accounts">
+    <div class="acc-head">
+      <input id="acc-q" type="text" placeholder="USERNAME / नाम खोजें...">
+      <label><input id="acc-w" type="checkbox"> सिर्फ़ Watch वाले</label>
+      <button id="acc-refresh">🔍 नए अकाउंट खोजें</button>
+    </div>
+    <div class="acc-note" id="acc-count"></div>
+    <div id="acc-list"></div>
+  </div>
+  <div class="stats">
+    <div class="stat hud" data-s=""><span>कुल</span><b id="s-total">-</b><div class="bar"><i id="b-total"></i></div></div>
+    <div class="stat hud" data-s="negative" style="--c:var(--neg)"><span>Negative</span><b id="s-negative">-</b><div class="bar"><i id="b-negative"></i></div></div>
+    <div class="stat hud" data-s="positive" style="--c:var(--pos)"><span>Positive</span><b id="s-positive">-</b><div class="bar"><i id="b-positive"></i></div></div>
+    <div class="stat hud" data-s="neutral" style="--c:var(--neu)"><span>Neutral</span><b id="s-neutral">-</b><div class="bar"><i id="b-neutral"></i></div></div>
+  </div>
+  <div id="list"></div>
+</main>
+<div id="viewer">
+  <div class="box hud">
+    <div class="bar">
+      <span class="tag plat" id="vw-plat"></span>
+      <span class="ttl" id="vw-title"></span>
+      <a id="vw-orig" href="#" target="_blank" rel="noopener noreferrer">मूल पेज ↗</a>
+      <button id="vw-close">✕ बंद</button>
+    </div>
+    <div class="body" id="vw-body"></div>
+  </div>
+</div>
+<div id="voicebox" class="hud">
+  <div class="st mono" id="v-state">Voice</div>
+  <div class="you" id="v-you"></div>
+  <div class="bot" id="v-bot"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function tick() {
+  const d = new Date();
+  $("clock").textContent = d.toLocaleTimeString("en-GB");
+  $("date").textContent = d.toLocaleDateString("en-IN", {weekday:"long", day:"numeric", month:"long", year:"numeric"}).toUpperCase();
+}
+tick(); setInterval(tick, 1000);
+
+let sourceFilter = "";
+async function load() {
+  const p = new URLSearchParams();
+  for (const k of ["q","topic","sentiment","language","platform"]) if ($(k).value) p.set(k, $(k).value);
+  if (sourceFilter) p.set("source", sourceFilter);
+  const [items, st] = await Promise.all([
+    fetch("/api/mentions?" + p).then(r => r.json()),
+    fetch("/api/stats").then(r => r.json()),
+  ]);
+  const total = st.total || 0;
+  for (const k of ["total","negative","positive","neutral"]) {
+    $("s-" + k).textContent = st[k] ?? 0;
+    $("b-" + k).style.width = (k === "total" ? 100 : total ? Math.round((st[k] || 0) * 100 / total) : 0) + "%";
+  }
+  $("list").innerHTML = items.length ? items.map(m => `
+    <div class="item hud ${esc(m.sentiment)}">
+      <a class="open" href="${esc(m.link)}" data-id="${m.id}" data-plat="${esc(m.platform || "news")}">${esc(m.title)}</a>
+      <div class="meta">
+        <span class="tag ${esc(m.sentiment)}">${esc(m.sentiment)}</span>
+        <span class="tag topic">${esc(m.topic)}</span>
+        <span class="tag plat ${esc(m.platform)}">${esc(m.platform || "news")}</span>
+        <span>${esc(m.source)}</span>
+        <span>${m.published ? new Date(m.published).toLocaleString("en-IN") : ""}</span>
+      </div>
+    </div>`).join("") : '<div class="empty">// कोई डेटा नहीं //</div>';
+}
+
+$("list").addEventListener("click", e => {
+  const a = e.target.closest("a.open");
+  if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  e.preventDefault();
+  openViewer(a.dataset.id, a.textContent, a.dataset.plat, a.href);
+});
+
+let viewSeq = 0;
+async function openViewer(id, title, plat, href) {
+  const seq = ++viewSeq, body = $("vw-body");
+  $("viewer").classList.add("show"); document.body.style.overflow = "hidden";
+  $("vw-title").textContent = title; $("vw-plat").textContent = plat; $("vw-plat").className = "tag plat " + plat;
+  $("vw-orig").href = href; body.className = "body";
+  body.innerHTML = '<div class="msg mono">// लोड हो रहा है… //</div>';
+  let v;
+  try { v = await fetch("/api/view/" + id).then(r => r.json()); }
+  catch (_) { v = {kind: "link", note: "लोड नहीं हो पाया।"}; }
+  if (seq !== viewSeq) return;
+  if (v.original) $("vw-orig").href = v.original;
+  if (v.kind === "embed") {
+    body.className = "body embed";
+    body.innerHTML = `<iframe src="${esc(v.embed)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  } else if (v.kind === "article") {
+    const paras = (v.text || "").split("\n").filter((t, i) => t.trim() && !(i === 0 && (v.title || "").trim().startsWith(t.trim().slice(0, 40)))).map(t => `<p>${esc(t)}</p>`).join("");
+    body.innerHTML = `<div class="article">${v.image ? `<img src="${esc(v.image)}" alt="" referrerpolicy="no-referrer">` : ""}
+      <div class="site mono">${esc(v.site || "")}</div><h2>${esc(v.title || title)}</h2>${paras}</div>`;
+  } else {
+    body.innerHTML = `<div class="msg">${esc(v.note || "यह पेज यहाँ नहीं खुल सकता।")}</div>`;
+  }
+}
+function closeViewer() {
+  viewSeq++; $("viewer").classList.remove("show"); document.body.style.overflow = "";
+  $("vw-body").innerHTML = "";
+}
+$("vw-close").addEventListener("click", closeViewer);
+$("viewer").addEventListener("click", e => { if (e.target.id === "viewer") closeViewer(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeViewer(); });
+
+function markActive() {
+  document.querySelectorAll(".stat").forEach(el => el.classList.toggle("active", el.dataset.s === $("sentiment").value));
+}
+document.querySelectorAll(".stat").forEach(el => el.addEventListener("click", () => {
+  $("sentiment").value = el.dataset.s; markActive(); load();
+}));
+$("sentiment").addEventListener("change", markActive);
+markActive();
+["topic","sentiment","language","platform"].forEach(k => $(k).addEventListener("change", load));
+let t; $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(load, 300); });
+$("refresh").addEventListener("click", async () => {
+  $("refresh").disabled = true; $("refresh").textContent = "लोड हो रहा है...";
+  await fetch("/api/collect", {method:"POST"});
+  await load();
+  $("refresh").disabled = false; $("refresh").textContent = "अभी अपडेट करें";
+});
+load(); setInterval(load, 60000);
+
+
+/* ---------- CISF accounts ---------- */
+const nf = n => n == null ? "—" : n >= 1e5 ? (n / 1e5).toFixed(1) + " लाख" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(n);
+function setView(v) {
+  document.body.classList.toggle("v-accounts", v === "acc");
+  $("tab-news").classList.toggle("active", v !== "acc");
+  $("tab-acc").classList.toggle("active", v === "acc");
+  if (v === "acc") loadAccounts();
+}
+async function loadAccounts() {
+  const p = new URLSearchParams();
+  if ($("acc-q").value) p.set("q", $("acc-q").value);
+  if ($("acc-w").checked) p.set("watched", 1);
+  const d = await fetch("/api/accounts?" + p).then(r => r.json());
+  $("acc-count").textContent = `कुल ${d.total} अकाउंट मिले जिनके username/नाम में CISF है · ${d.watching} को Watch पर रखा है। ` +
+    "ये सार्वजनिक Instagram अकाउंट हैं: कौन असली CISF का है और कौन सिर्फ़ नाम रखकर बैठा है, यह आप खुद प्रोफ़ाइल खोलकर जाँचिए।";
+  $("acc-list").innerHTML = d.items.length ? d.items.map(a => `
+    <div class="acc hud ${a.watched ? "w" : ""}">
+      <div class="who">
+        <div class="un">@${esc(a.username)}</div>
+        <div class="fn">${esc(a.full_name || "")}</div>
+        <div class="chips">
+          <span class="tag">👥 ${nf(a.followers)}</span>
+          <span class="tag ${a.private ? "negative" : "positive"}">${a.private == null ? "?" : a.private ? "🔒 Private" : "🌐 Public"}</span>
+          ${a.verified ? '<span class="tag topic">✔ Verified</span>' : ""}
+          <span class="tag plat">${a.posts} पोस्ट हमारे पास</span>
+          ${a.last_post ? `<span class="tag">आख़िरी: ${new Date(a.last_post).toLocaleDateString("en-IN")}</span>` : ""}
+        </div>
+      </div>
+      <div class="btns">
+        <button class="wbtn ${a.watched ? "on" : ""}" data-u="${esc(a.username)}" data-w="${a.watched ? 0 : 1}">${a.watched ? "★ Watching" : "☆ Watch"}</button>
+        <a href="https://www.instagram.com/${esc(a.username)}/" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
+        ${a.posts ? `<button class="pbtn" data-u="${esc(a.username)}">पोस्ट देखें</button>` : ""}
+      </div>
+    </div>`).join("") : '<div class="empty">// अभी कोई अकाउंट नहीं //</div>';
+}
+$("acc-list").addEventListener("click", async e => {
+  const w = e.target.closest(".wbtn"), pb = e.target.closest(".pbtn");
+  if (w) {
+    await fetch(`/api/accounts/${encodeURIComponent(w.dataset.u)}/watch`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({watched: w.dataset.w === "1"})});
+    loadAccounts();
+  } else if (pb) {
+    sourceFilter = "@" + pb.dataset.u; clearFilters();
+    $("srctext").textContent = "सिर्फ़ इनकी पोस्ट: " + sourceFilter; $("srcchip").classList.add("show");
+    setView("news"); load();
+  }
+});
+function clearFilters() { for (const k of ["q","topic","sentiment","language","platform"]) $(k).value = ""; markActive(); }
+$("srcx").addEventListener("click", () => { sourceFilter = ""; $("srcchip").classList.remove("show"); load(); });
+$("tab-news").addEventListener("click", () => setView("news"));
+$("tab-acc").addEventListener("click", () => setView("acc"));
+$("acc-w").addEventListener("change", loadAccounts);
+let at; $("acc-q").addEventListener("input", () => { clearTimeout(at); at = setTimeout(loadAccounts, 300); });
+$("acc-refresh").addEventListener("click", async () => {
+  const b = $("acc-refresh"); b.disabled = true; b.textContent = "खोज चालू है… (10-20 मिनट)";
+  try { await fetch("/api/accounts/refresh", {method: "POST"}); } catch (_) {}
+  const timer = setInterval(async () => {
+    loadAccounts();
+    const st = await fetch("/api/accounts/status").then(r => r.json()).catch(() => ({running: true}));
+    if (!st.running) { clearInterval(timer); b.disabled = false; b.textContent = "🔍 नए अकाउंट खोजें"; }
+  }, 20000);
+});
+
+/* ---------- Voice assistant (Gemini Live) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const WAKE = /drishti|dristi|drishthi|trishti|dishti|दृष्टि|दृष्टी|द्रष्टि|दृस्टि|दिष्टि|दृष्ठि/i;
+let standby = false, live = null, wakeRec = null, wakeTimer = null;
+
+const vshow = (state, you, bot) => {
+  $("voicebox").classList.add("show");
+  if (state != null) $("v-state").textContent = state;
+  if (you != null) $("v-you").textContent = you;
+  if (bot != null) $("v-bot").textContent = bot;
+};
+const micOff = () => { $("mic").classList.remove("on"); $("mic").textContent = "🎤 Voice चालू करें"; };
+
+/* ---- wake word: "Hey Drishti" ---- */
+function startWake() {
+  stopWake();
+  if (!standby || live) return;
+  const r = wakeRec = new SR();
+  r.lang = "hi-IN"; r.continuous = true; r.interimResults = false;
+  r.onresult = e => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (!e.results[i].isFinal) continue;
+      const text = e.results[i][0].transcript.trim();
+      if (WAKE.test(text)) { stopWake(); startLive(); return; }
+      vshow("Standby — बोलिए: Hey Drishti", "सुना: " + text, null);
+    }
+  };
+  r.onend = () => { if (wakeRec === r) { wakeRec = null; if (standby && !live) wakeTimer = setTimeout(startWake, 250); } };
+  r.onerror = e => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      standby = false; micOff();
+      vshow("Mic blocked", null, "माइक की permission दीजिए (address bar में 🔒 पर क्लिक करके)।");
+    }
+  };
+  try { r.start(); } catch (_) {}
+}
+function stopWake() {
+  clearTimeout(wakeTimer);
+  if (wakeRec) { const r = wakeRec; wakeRec = null; r.onend = null; r.onresult = null; try { r.abort(); } catch (_) {} }
+}
+
+/* ---- live session ---- */
+const workletCode = `
+class Cap extends AudioWorkletProcessor {
+  process(inputs) { const ch = inputs[0][0]; if (ch) this.port.postMessage(ch.slice(0)); return true; }
+}
+registerProcessor("cap", Cap);`;
+
+async function startLive() {
+  if (live) return;
+  const s = live = { ws: null, stream: null, inCtx: null, outCtx: null, next: 0, srcs: [], closed: false, you: "", bot: "" };
+  vshow("Connecting…", "", "");
+  try {
+    s.stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1}});
+  } catch (_) {
+    live = null; standby = false; micOff();
+    vshow("Mic blocked", null, "माइक की permission दीजिए (address bar में 🔒 पर क्लिक करके)।"); return;
+  }
+  s.outCtx = new AudioContext({sampleRate: 24000});
+  s.inCtx = new AudioContext({sampleRate: 16000});
+  await s.outCtx.resume(); await s.inCtx.resume();
+  await s.inCtx.audioWorklet.addModule(URL.createObjectURL(new Blob([workletCode], {type: "application/javascript"})));
+
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  s.ws = new WebSocket(`${proto}://${location.host}/ws/voice`);
+  s.ws.binaryType = "arraybuffer";
+
+  s.ws.onopen = () => {
+    const src = s.inCtx.createMediaStreamSource(s.stream);
+    const node = new AudioWorkletNode(s.inCtx, "cap");
+    node.port.onmessage = e => {
+      if (s.ws.readyState !== 1) return;
+      const f = e.data, out = new Int16Array(f.length);
+      for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); out[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
+      s.ws.send(out.buffer);
+    };
+    src.connect(node);
+    s.node = node;
+  };
+
+  s.ws.onmessage = ev => {
+    if (typeof ev.data !== "string") return playChunk(s, ev.data);
+    const m = JSON.parse(ev.data);
+    if (m.type === "ready") vshow("Listening…", null, null);
+    else if (m.type === "you") { s.you += m.text; vshow(null, "आप: " + s.you, null); }
+    else if (m.type === "bot") { s.bot += m.text; vshow("Speaking…", null, s.bot); }
+    else if (m.type === "turn_complete") { s.you = ""; s.bot = ""; vshow("Listening…", null, null); }
+    else if (m.type === "interrupted") { stopPlayback(s); s.bot = ""; }
+    else if (m.type === "filters") applyFilters(m.filters);
+    else if (m.type === "open") openViewer(m.id, m.title, m.platform, m.link);
+    else if (m.type === "refresh") load();
+    else if (m.type === "error") { vshow("Error", null, m.text); endLive(); }
+    else if (m.type === "end") setTimeout(endLive, Math.max(300, (s.next - s.outCtx.currentTime) * 1000 + 300));
+  };
+  s.ws.onclose = () => endLive();
+  s.ws.onerror = () => vshow("Error", null, "सर्वर से जुड़ नहीं पाया।");
+}
+
+function playChunk(s, buf) {
+  const i16 = new Int16Array(buf), f32 = new Float32Array(i16.length);
+  for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 32768;
+  const ab = s.outCtx.createBuffer(1, f32.length, 24000);
+  ab.copyToChannel(f32, 0);
+  const src = s.outCtx.createBufferSource();
+  src.buffer = ab; src.connect(s.outCtx.destination);
+  const t = Math.max(s.outCtx.currentTime + 0.05, s.next);
+  src.start(t); s.next = t + ab.duration;
+  s.srcs.push(src); src.onended = () => { s.srcs = s.srcs.filter(x => x !== src); };
+}
+function stopPlayback(s) {
+  s.srcs.forEach(x => { try { x.stop(); } catch (_) {} });
+  s.srcs = []; s.next = 0;
+}
+
+function applyFilters(f) {
+  for (const k of ["topic", "sentiment", "platform", "language", "q"]) $(k).value = f[k] || "";
+  markActive(); load();
+}
+
+function endLive() {
+  const s = live;
+  if (!s || s.closed) return;
+  s.closed = true; live = null;
+  try { s.ws.onclose = null; if (s.ws.readyState === 1) s.ws.send("stop"); s.ws.close(); } catch (_) {}
+  try { s.node && s.node.disconnect(); } catch (_) {}
+  try { s.stream && s.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
+  try { s.inCtx && s.inCtx.close(); } catch (_) {}
+  stopPlayback(s); try { s.outCtx && s.outCtx.close(); } catch (_) {}
+  if (standby) { vshow("Standby — बोलिए: Hey Drishti", "", ""); setTimeout(startWake, 400); }
+}
+
+$("mic").addEventListener("click", () => {
+  if (!SR) { vshow("Not supported", null, "यह browser voice सुनना सपोर्ट नहीं करता। कृपया Google Chrome में खोलिए।"); return; }
+  if (standby || live) {
+    standby = false; stopWake(); endLive(); micOff();
+    $("voicebox").classList.remove("show"); return;
+  }
+  standby = true; $("mic").classList.add("on"); $("mic").textContent = "🎤 सुन रहा हूँ… (बंद करें)";
+  vshow("Standby — बोलिए: Hey Drishti", "", "");
+  startWake();
+});
+</script>
+</body>
+</html>

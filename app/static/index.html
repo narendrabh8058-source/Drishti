@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drishti</title>
+<style>
+  :root { --bg:#02080f; --panel:rgba(4,22,36,.82); --panel2:rgba(7,34,52,.9); --cy:#19d3f0; --cy2:#0a93ad; --line:rgba(25,211,240,.26); --text:#d3f1fb; --muted:#6a99ad;
+          --pos:#2ee86b; --neg:#ff4d6a; --neu:#f5c518; --crit:#ff3b4e; --high:#ff9a3d; --med:#ffd23d; --low:#3ddc84; --violet:#a78bfa; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; font-family:"Rajdhani","Segoe UI",system-ui,sans-serif; color:var(--text); background:var(--bg); overflow:hidden;
+         background-image:radial-gradient(1100px 600px at 50% 30%, rgba(10,90,125,.28), transparent 70%), radial-gradient(800px 500px at 100% 100%, rgba(10,60,110,.25), transparent 70%);
+         display:grid; grid-template-rows:68px minmax(0,1fr); height:100vh; }
+  ::-webkit-scrollbar { width:6px; height:6px; } ::-webkit-scrollbar-thumb { background:var(--cy2); border-radius:6px; }
+  .mono { font-family:"Consolas","Courier New",monospace; letter-spacing:1px; }
+  button, input, select { font:inherit; color:var(--text); }
+  input, select { background:rgba(3,20,31,.9); border:1px solid var(--line); border-radius:6px; padding:7px 10px; outline:none; font-size:14px; width:100%; transition:.15s; }
+  input:focus, select:focus { border-color:var(--cy); box-shadow:0 0 10px rgba(25,211,240,.3); }
+  select { appearance:none; cursor:pointer; } option { background:#04141f; }
+  button { cursor:pointer; background:rgba(25,211,240,.08); border:1px solid var(--cy); color:var(--cy); border-radius:6px; padding:7px 12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; font-size:12px; transition:.15s; }
+  button:hover { background:rgba(25,211,240,.22); color:#fff; }
+  button:disabled { opacity:.55; cursor:wait; }
+
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:6px; position:relative; }
+  .panel::before, .panel::after { content:""; position:absolute; width:9px; height:9px; border:2px solid var(--cy); pointer-events:none; opacity:.8; }
+  .panel::before { top:-1px; left:-1px; border-right:0; border-bottom:0; } .panel::after { bottom:-1px; right:-1px; border-left:0; border-top:0; }
+  .ptitle { display:flex; align-items:center; gap:8px; padding:9px 12px 0; font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--cy); font-weight:700; }
+  .ptitle small { margin-left:auto; color:var(--muted); font-size:11px; letter-spacing:1px; font-weight:400; }
+
+  /* ---------- header ---------- */
+  header { display:flex; align-items:center; gap:14px; padding:0 14px; border-bottom:1px solid var(--line); background:rgba(1,10,17,.92); }
+  .brand { display:flex; align-items:center; gap:10px; flex:none; }
+  .reactor { width:36px; height:36px; position:relative; flex:none; }
+  .reactor i { position:absolute; border-radius:50%; border:1.5px solid var(--cy); inset:0; filter:drop-shadow(0 0 4px var(--cy)); }
+  .reactor i:nth-child(1) { border-style:dashed; animation:spin 14s linear infinite; }
+  .reactor i:nth-child(2) { inset:6px; border-color:var(--cy2); border-top-color:transparent; border-bottom-color:transparent; animation:spin 4s linear infinite reverse; }
+  .reactor i:nth-child(3) { inset:13px; background:radial-gradient(circle,#fff,var(--cy) 60%); border:0; animation:glow 2.4s ease-in-out infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } } @keyframes glow { 50% { box-shadow:0 0 16px 4px var(--cy); } 0%,100% { box-shadow:0 0 6px 1px var(--cy); } }
+  .brand h1 { margin:0; font-size:22px; letter-spacing:6px; color:#fff; text-shadow:0 0 10px var(--cy); line-height:1; }
+  .brand small { display:block; font-size:10px; letter-spacing:2px; color:var(--muted); margin-top:3px; }
+  nav { display:flex; gap:6px; margin:0 auto; }
+  nav button { display:flex; align-items:center; gap:8px; padding:11px 18px; font-size:13px; letter-spacing:2.5px; border-color:transparent; background:transparent; color:var(--muted); }
+  nav button.active { color:#fff; border-color:var(--cy); background:rgba(25,211,240,.16); box-shadow:0 0 14px rgba(25,211,240,.3), inset 0 0 10px rgba(25,211,240,.1); }
+  .hcards { display:flex; gap:10px; flex:none; }
+  .hcard { display:flex; align-items:center; gap:10px; padding:6px 14px; min-width:128px; border:1px solid var(--line); border-radius:6px; background:var(--panel); }
+  .hcard b { display:block; font-size:19px; color:var(--cy); line-height:1.05; text-shadow:0 0 8px rgba(25,211,240,.5); }
+  .hcard small { display:block; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
+  .hcard.alert { border-color:rgba(255,77,106,.5); } .hcard.alert b { color:var(--neg); text-shadow:0 0 8px rgba(255,77,106,.5); }
+  .hcard.health b { color:var(--pos); text-shadow:0 0 8px rgba(46,232,107,.5); }
+  .hbar { height:3px; background:rgba(255,255,255,.08); border-radius:2px; margin-top:4px; } .hbar i { display:block; height:100%; background:var(--pos); border-radius:2px; box-shadow:0 0 6px var(--pos); }
+  .hicon { font-size:20px; }
+
+  /* ---------- 3 columns ---------- */
+  .cols { display:grid; grid-template-columns:290px minmax(0,1fr) 410px; gap:10px; padding:10px; min-height:0; }
+  .col { min-height:0; display:flex; flex-direction:column; gap:10px; }
+  .scroll { overflow-y:auto; padding-right:2px; }
+  .left .scroll, .center .scroll { flex:1; min-height:0; display:flex; flex-direction:column; gap:10px; }
+  .center { position:relative; }
+
+  /* sentiment cards */
+  .sent { display:grid; grid-template-columns:44px 1fr 86px; align-items:center; gap:10px; padding:10px 12px; margin:6px 10px 0; cursor:pointer; border:1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius:6px; background:rgba(3,18,29,.85); transition:.15s; }
+  .sent:hover, .sent.active { background:var(--panel2); box-shadow:0 0 16px color-mix(in srgb, var(--c) 35%, transparent); border-color:var(--c); }
+  .sent .ic { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:20px; color:var(--c); border:1.5px solid var(--c); box-shadow:0 0 12px color-mix(in srgb, var(--c) 50%, transparent); }
+  .sent .lab { font-size:12px; letter-spacing:2px; color:var(--text); text-transform:uppercase; }
+  .sent .num { font-size:30px; font-weight:700; color:var(--c); line-height:1.05; text-shadow:0 0 10px color-mix(in srgb, var(--c) 60%, transparent); }
+  .sent .dl { font-size:12px; color:var(--c); margin-left:6px; }
+  .sent svg { width:86px; height:36px; }
+  .panel > .pad { padding:10px 0 10px; }
+
+  /* threat rows */
+  .thr-row { display:grid; grid-template-columns:30px 1fr 48px 44px; align-items:center; gap:8px; margin:6px 10px 0; padding:7px 10px; border-radius:5px; cursor:pointer; border:1px solid color-mix(in srgb, var(--c) 40%, transparent); background:rgba(3,18,29,.85); font-size:15px; }
+  .thr-row:hover, .thr-row.active { background:var(--panel2); border-color:var(--c); box-shadow:0 0 12px color-mix(in srgb, var(--c) 30%, transparent); }
+  .thr-row .sq { width:24px; height:24px; border-radius:4px; display:grid; place-items:center; background:color-mix(in srgb, var(--c) 25%, transparent); color:var(--c); border:1px solid var(--c); font-size:13px; }
+  .thr-row .nm { letter-spacing:2px; font-size:13px; color:var(--c); text-transform:uppercase; font-weight:700; }
+  .thr-row .n { text-align:right; font-weight:700; color:#fff; font-size:17px; } .thr-row .p { text-align:right; color:var(--muted); font-size:13px; }
+
+  .filters { padding:6px 12px 12px; display:flex; flex-direction:column; gap:8px; }
+  .frow { display:flex; gap:8px; } .frow button { flex:1; } .frow .sq { flex:none; width:40px; padding:7px 0; }
+
+  /* ---------- centre panels ---------- */
+  #pipe { width:100%; display:block; height:auto; }
+  #pipe text { font-family:"Consolas","Courier New",monospace; fill:var(--muted); letter-spacing:1px; }
+  #pipe .box rect { fill:rgba(3,22,35,.92); stroke:var(--cy2); stroke-width:1; rx:5; }
+  #pipe .box.hot rect { stroke:var(--cy); filter:drop-shadow(0 0 5px var(--cy)); }
+  #pipe .flow { stroke:rgba(25,211,240,.5); stroke-width:1.2; fill:none; stroke-dasharray:3 5; animation:dash 1.3s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset:-16; } }
+  #pipe .pkt { filter:drop-shadow(0 0 5px currentColor); }
+  .mapwrap { display:grid; grid-template-columns:minmax(0,1fr) 230px; gap:0; }
+  .mtabs { display:flex; gap:6px; padding:8px 12px 0; }
+  .mtabs button { padding:5px 12px; font-size:11px; opacity:.6; } .mtabs button.active { opacity:1; background:rgba(25,211,240,.25); color:#fff; }
+  #map, #bigmap { width:100%; display:block; }
+  #bigmap { max-height:calc(100vh - 210px); margin:0 auto; }
+  .legend { position:absolute; left:14px; bottom:14px; display:flex; flex-direction:column; gap:5px; padding:8px 10px; background:rgba(3,16,26,.85); border:1px solid var(--line); border-radius:5px; font-size:12px; }
+  .legend i { display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:7px; vertical-align:-1px; }
+  .insights { border-left:1px solid var(--line); padding:8px 12px; overflow:auto; max-height:430px; }
+  .insights h4 { margin:2px 0 8px; font-size:12px; letter-spacing:2px; color:#fff; font-weight:700; text-transform:uppercase; }
+  .ins { display:grid; grid-template-columns:1fr 26px 78px; gap:6px; padding:6px 4px; font-size:13px; border-bottom:1px solid rgba(25,211,240,.1); cursor:pointer; }
+  .ins:hover { background:rgba(25,211,240,.08); } .ins .st { text-align:right; font-weight:700; letter-spacing:.5px; }
+  .pulse { animation:pulse 1.8s ease-out infinite; transform-box:fill-box; transform-origin:center; }
+  @keyframes pulse { 0% { transform:scale(.6); opacity:.9; } 100% { transform:scale(2.4); opacity:0; } }
+
+  .cards5 { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; }
+  .scard { padding:10px 12px 10px; min-height:132px; }
+  .scard h5 { margin:0; font-size:11px; letter-spacing:2px; color:#fff; text-transform:uppercase; font-weight:700; }
+  .scard .sub { font-size:10px; color:var(--muted); letter-spacing:1px; }
+  .scard .big { font-size:27px; font-weight:700; color:var(--cy); text-shadow:0 0 8px rgba(25,211,240,.5); margin:4px 0 2px; line-height:1.1; }
+  .scard svg { width:100%; height:44px; display:block; }
+  .erow { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text); line-height:1.5; } .erow i { width:8px; height:8px; border-radius:50%; } .erow b { margin-left:auto; color:#fff; }
+  .prog { height:5px; background:rgba(255,255,255,.08); border-radius:3px; margin-top:6px; } .prog i { display:block; height:100%; background:linear-gradient(90deg,var(--cy2),var(--cy)); border-radius:3px; box-shadow:0 0 8px var(--cy); }
+
+  .bottom { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+  #logs { padding:6px 12px 10px; font-family:"Consolas","Courier New",monospace; font-size:11.5px; line-height:1.6; height:120px; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; }
+  #logs div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:none; } #logs .t { color:#3f7186; }
+  #logs .INFO { color:var(--cy); } #logs .AI { color:#b9a8ff; } #logs .WARN { color:var(--neu); } #logs .ALERT { color:var(--neg); }
+  .askbox { padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+  .askrow { display:flex; gap:8px; align-items:center; }
+  .askrow input { flex:1; border-radius:20px; padding:9px 14px; }
+  .roundbtn { width:42px; height:42px; border-radius:50%; padding:0; display:grid; place-items:center; font-size:17px; flex:none; }
+  #mic.on { background:var(--neg); color:#fff; border-color:var(--neg); animation:micpulse 1.4s infinite; } @keyframes micpulse { 50% { box-shadow:0 0 18px rgba(255,77,106,.7); } }
+  #send { background:var(--cy); color:#02080f; }
+  .sugg { display:flex; gap:6px; flex-wrap:wrap; } .sugg button { font-size:11px; letter-spacing:.5px; text-transform:none; font-weight:500; padding:4px 10px; border-radius:14px; color:var(--text); border-color:var(--line); background:rgba(3,20,31,.8); }
+  #voicebox .st { color:var(--cy); font-size:11px; letter-spacing:3px; text-transform:uppercase; }
+  #voicebox .you { color:var(--muted); font-size:12px; min-height:16px; } #voicebox .bot { color:#fff; font-size:14px; line-height:1.4; min-height:20px; max-height:84px; overflow:auto; }
+
+  /* ---------- right: feed ---------- */
+  .right { display:grid; grid-template-rows:minmax(0,1fr) auto; }
+  .feedpanel { display:flex; flex-direction:column; min-height:0; }
+  .ms { position:relative; } .msbtn { display:flex; justify-content:space-between; align-items:center; width:100%; text-align:left; text-transform:none; letter-spacing:0; font-weight:400; font-size:14px; padding:7px 10px; background:rgba(3,20,31,.9); border:1px solid var(--line); color:var(--text); }
+  .msbtn:hover, .ms.open .msbtn { border-color:var(--cy); background:rgba(3,20,31,.9); color:var(--text); }
+  .msmenu { position:absolute; z-index:60; left:0; right:0; top:calc(100% + 4px); background:#04141f; border:1px solid var(--cy); border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,.6); padding:4px; max-height:340px; overflow:auto; }
+  .msrow { display:flex; align-items:center; gap:9px; padding:6px 8px; border-radius:4px; cursor:pointer; font-size:14px; } .msrow:hover { background:rgba(25,211,240,.12); } .msrow input { width:auto; accent-color:#19d3f0; } .msrow span { flex:1; } .msrow small { color:var(--muted); font-size:12px; }
+  #scope-clear { width:100%; margin-top:4px; padding:5px; font-size:11px; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; padding:10px 12px 6px; }
+  .chip { padding:4px 11px; font-size:12px; letter-spacing:1.2px; border-radius:4px; opacity:.75; } .chip small { font-size:10px; font-weight:400; letter-spacing:0; margin-left:5px; opacity:.85; } .chip.active { opacity:1; background:var(--cy); color:#02080f; }
+  #fchips { display:flex; gap:6px; flex-wrap:wrap; padding:0 12px; } #fchips span { font-size:11px; padding:2px 8px; border:1px solid var(--cy2); border-radius:10px; color:var(--cy); cursor:pointer; margin-bottom:6px; }
+  #list { flex:1; min-height:0; overflow-y:auto; padding:4px 10px 10px; }
+  .card { display:grid; grid-template-columns:92px minmax(0,1fr); gap:10px; padding:9px; margin-bottom:9px; border:1px solid color-mix(in srgb, var(--c,#19d3f0) 35%, transparent); border-radius:6px; background:rgba(3,18,29,.85); transition:.15s; --c:var(--cy2); }
+  .card:hover { background:var(--panel2); border-color:var(--c); }
+  .card.critical { --c:var(--crit); } .card.high { --c:var(--high); } .card.medium { --c:var(--med); } .card.low { --c:var(--low); }
+  .thumb { width:92px; height:78px; border-radius:5px; overflow:hidden; background:#06202e; display:grid; place-items:center; font-size:26px; border:1px solid var(--line); position:relative; }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb.instagram { background:linear-gradient(135deg,#7b2ff7,#f107a3,#ff9a3d); } .thumb.facebook { background:#1b4fa8; } .thumb.x { background:#000; } .thumb.reddit { background:#c2410c; } .thumb.youtube { background:#7f1d1d; } .thumb.news { background:linear-gradient(135deg,#0a3a52,#06202e); }
+  .crow { display:flex; align-items:center; gap:7px; flex-wrap:wrap; font-size:10.5px; letter-spacing:1px; }
+  .thrb { padding:1px 9px; border-radius:3px; font-weight:700; background:color-mix(in srgb, var(--c) 28%, transparent); color:var(--c); border:1px solid var(--c); text-transform:uppercase; }
+  .conf { color:var(--pos); } .ctime { color:var(--muted); margin-left:auto; }
+  .card a { color:#eaf9ff; text-decoration:none; font-weight:700; font-size:14.5px; line-height:1.35; margin:5px 0 6px; cursor:pointer; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+  .card a:hover { color:var(--cy); }
+  .tags { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+  .tag { padding:1px 8px; font-size:10px; text-transform:uppercase; letter-spacing:1.2px; border:1px solid var(--line); border-radius:10px; color:var(--muted); }
+  .tag.negative { color:var(--neg); border-color:var(--neg); } .tag.positive { color:var(--pos); border-color:var(--pos); } .tag.neutral { color:var(--neu); border-color:rgba(245,197,24,.5); }
+  .tag.topic { color:var(--cy); border-color:var(--cy2); } .tag.plat { color:#b9a8ff; border-color:#6f5bd6; }
+  .tag.plat.youtube { color:#ff8d8d; border-color:#c93a3a; } .tag.plat.reddit { color:#ffb27a; border-color:#d5671e; } .tag.plat.instagram { color:#ff9ad0; border-color:#c43e8f; }
+  .tag.plat.facebook { color:#8fbaff; border-color:#3a72d4; } .tag.plat.x { color:#e7e9ea; border-color:#8b98a5; } .tag.plat.news { color:#9fe7ff; border-color:var(--cy2); }
+  .loc { color:var(--muted); font-size:11px; margin-left:2px; }
+  .empty { color:var(--muted); text-align:center; padding:50px 10px; letter-spacing:3px; text-transform:uppercase; font-size:13px; }
+  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .mini { padding:8px 12px 10px; } .mini h5 { margin:0 0 6px; font-size:11px; letter-spacing:2px; color:var(--cy); text-transform:uppercase; } .mini h5 small { color:var(--muted); font-size:10px; letter-spacing:0; }
+  .mrow { display:grid; grid-template-columns:16px minmax(0,1fr) 34px; gap:6px; font-size:12px; align-items:center; line-height:1.55; } .mrow span:nth-child(2) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .mrow b { text-align:right; }
+  .krow { display:grid; grid-template-columns:62px 1fr 28px; gap:6px; font-size:12px; align-items:center; line-height:1.55; } .kbar { height:5px; background:rgba(255,255,255,.08); border-radius:3px; } .kbar i { display:block; height:100%; background:var(--pos); border-radius:3px; box-shadow:0 0 6px var(--pos); }
+
+  /* ---------- viewer (replaces the centre column when a post is opened) ---------- */
+  #viewer { position:absolute; inset:0; z-index:30; display:none; }
+  #viewer.show { display:block; }
+  #viewer .box { width:100%; height:100%; display:flex; flex-direction:column; background:rgba(3,16,28,.98); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  #viewer .vbar { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); }
+  #viewer .vbar .ttl { flex:1; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff; }
+  #viewer .vbar a { text-decoration:none; color:var(--cy); border:1px solid var(--cy); border-radius:6px; padding:6px 12px; font-size:12px; letter-spacing:1.5px; background:rgba(25,211,240,.08); text-transform:uppercase; white-space:nowrap; }
+  #viewer .body { flex:1; overflow:auto; display:flex; justify-content:center; } #viewer iframe { width:100%; height:100%; border:0; background:#fff; } #viewer .body.embed { background:#000; }
+  #viewer .article { max-width:760px; padding:22px 26px 40px; line-height:1.8; font-size:18px; color:#d8f1ff; }
+  #viewer .article img { width:100%; max-height:380px; object-fit:cover; margin-bottom:16px; border:1px solid var(--line); border-radius:6px; }
+  #viewer .article h2 { margin:0 0 6px; font-size:26px; color:#fff; line-height:1.35; } #viewer .article .site { color:var(--cy); font-size:12px; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; } #viewer .article p { margin:0 0 14px; }
+  #viewer .msg { margin:auto; text-align:center; color:var(--muted); padding:30px; letter-spacing:1px; max-width:480px; line-height:1.7; }
+
+  /* ---------- other tabs ---------- */
+  .page { display:none; padding:12px; overflow-y:auto; min-height:0; } body.tab-analytics #p-analytics, body.tab-map #p-map, body.tab-sources #p-sources, body.tab-reports #p-reports { display:block; }
+  body:not(.tab-live) .cols { display:none; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(380px,1fr)); gap:12px; }
+  .bigpanel { padding-bottom:12px; } .bigpanel .inner { padding:10px 14px; }
+  .bar2 { display:grid; grid-template-columns:110px 1fr 54px; gap:10px; align-items:center; font-size:13px; padding:4px 0; } .bar2 .tr { height:8px; background:rgba(255,255,255,.07); border-radius:4px; } .bar2 .tr i { display:block; height:100%; border-radius:4px; background:var(--cy); box-shadow:0 0 8px currentColor; }
+  .srcgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:12px; margin-bottom:14px; }
+  .src { padding:12px 14px; cursor:pointer; transition:.15s; } .src:hover { background:var(--panel2); border-color:var(--cy); box-shadow:0 0 16px rgba(25,211,240,.25); transform:translateY(-1px); } .src.active { border-color:var(--cy); box-shadow:0 0 18px rgba(25,211,240,.4), inset 0 0 14px rgba(25,211,240,.12); } .src .go { margin-top:6px; font-size:11px; letter-spacing:2px; color:var(--cy); text-transform:uppercase; } .src h4 { margin:0; font-size:14px; letter-spacing:3px; text-transform:uppercase; color:#fff; } .src .n { font-size:30px; font-weight:700; color:var(--cy); } .src .m { font-size:12px; color:var(--muted); line-height:1.7; }
+  .okdot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; background:var(--pos); box-shadow:0 0 8px var(--pos); } .okdot.off { background:var(--muted); box-shadow:none; }
+  .acc-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; } .acc-head input[type=text] { flex:1; min-width:180px; width:auto; } .acc-head label { color:var(--muted); font-size:13px; display:flex; gap:6px; align-items:center; white-space:nowrap; } .acc-head input[type=checkbox] { width:auto; }
+  #acc-tabs button span { font-weight:400; opacity:.85; margin-left:4px; }
+  .acc-note { color:var(--muted); font-size:12.5px; margin-bottom:10px; line-height:1.55; }
+  .acc { padding:10px 14px; margin-bottom:8px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; } .acc.w { border-color:var(--high); } .acc .who { flex:1; min-width:200px; }
+  .acc .un { font-size:16px; font-weight:700; color:#fff; } .acc .fn { color:var(--muted); font-size:12px; } .acc .chips2 { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; } .acc .btns { display:flex; gap:6px; flex-wrap:wrap; }
+  .acc .btns button, .acc .btns a.obtn { padding:5px 10px; font-size:11px; }
+  .acc .btns a.obtn { text-decoration:none; color:var(--cy); border:1px solid var(--cy); border-radius:6px; background:rgba(25,211,240,.07); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; display:inline-block; }
+  .acc .btns a.obtn:hover, .spost .ext:hover { background:rgba(25,211,240,.25); color:#fff; }
+  .spost .ext { margin-left:8px; padding:0 7px; border:1px solid var(--cy2); border-radius:4px; color:var(--cy); text-decoration:none; font-size:12px; } .acc .btns .wbtn.on { color:#02070d; background:var(--high); border-color:var(--high); }
+  #reportbox { white-space:pre-wrap; line-height:1.85; font-size:16px; padding:6px 4px; min-height:200px; }
+  #reportbox:empty::before { content:"// रिपोर्ट बनाने के लिए ऊपर का बटन दबाइए //"; color:var(--muted); letter-spacing:2px; font-size:13px; }
+
+  .soc { display:grid; grid-template-columns:300px minmax(0,1fr); gap:14px; align-items:start; } .socl input { margin-bottom:8px; }
+  #soc-accts { max-height:580px; overflow:auto; border:1px solid var(--line); border-radius:6px; background:rgba(3,18,29,.6); }
+  .arow { display:grid; grid-template-columns:minmax(0,1fr) 42px; gap:6px; padding:7px 10px; border-bottom:1px solid rgba(25,211,240,.1); cursor:pointer; font-size:14px; }
+  .arow:hover, .arow.active { background:rgba(25,211,240,.14); } .arow .nm { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; color:#fff; } .arow b { text-align:right; color:var(--cy); }
+  .arow .sb { grid-column:1/-1; display:flex; height:3px; border-radius:2px; overflow:hidden; margin-top:2px; } .arow .sb i { display:block; height:100%; }
+  #soc-posts { max-height:580px; overflow:auto; padding-right:4px; }
+  .spost { padding:10px 12px; margin-bottom:8px; border:1px solid var(--line); border-radius:6px; background:rgba(3,18,29,.85); cursor:pointer; transition:.15s; }
+  .spost:hover { background:var(--panel2); border-color:var(--cy); } .spost .who { font-weight:700; color:var(--cy); font-size:14.5px; } .spost .tt { color:#eaf9ff; font-size:14.5px; line-height:1.4; margin:4px 0 6px; }
+  @media (max-width:900px) { .soc { grid-template-columns:1fr; } }
+  @media (max-width:1180px) { .cols { grid-template-columns:250px minmax(0,1fr) 340px; } .hcards .hcard:nth-child(3) { display:none; } nav button { padding:10px 10px; letter-spacing:1px; } }
+  @media (max-width:980px) {
+    body { overflow:auto; display:block; height:auto; } header { height:auto; flex-wrap:wrap; padding:8px; } nav { order:3; width:100%; overflow-x:auto; margin:0; }
+    .cols { display:flex; flex-direction:column; } .center { min-height:900px; } .right { min-height:700px; } .mapwrap { grid-template-columns:1fr; } .insights { border-left:0; border-top:1px solid var(--line); }
+  }
+</style>
+</head>
+<body class="tab-live">
+<header>
+  <div class="brand"><div class="reactor"><i></i><i></i><i></i></div><div><h1>DRISHTI</h1><small class="mono">CISF · ISRO · MEDIA INTELLIGENCE</small></div></div>
+  <nav>
+    <button data-tab="live" class="active">◉ Live</button>
+    <button data-tab="analytics">✦ AI Analytics</button>
+    <button data-tab="sources">☰ Sources</button>
+    <button data-tab="reports">▤ Reports</button>
+  </nav>
+  <div class="hcards">
+    <div class="hcard"><span class="hicon">◷</span><div><b id="clock" class="mono">--:--:--</b><small id="date"></small></div></div>
+    <div class="hcard"><span class="hicon">☁</span><div><b id="hd-src">-</b><small>Sources</small></div></div>
+    <div class="hcard alert" id="hd-alert-card" style="cursor:pointer"><span class="hicon" style="color:var(--neg)">▲</span><div><b id="hd-alerts">-</b><small>Alerts</small></div></div>
+    <div class="hcard health"><span class="hicon" style="color:var(--pos)">✚</span><div><small>System health</small><b id="hd-health">-</b><div class="hbar"><i id="hd-hbar" style="width:0"></i></div></div></div>
+  </div>
+</header>
+
+<div class="cols" id="p-live">
+  <!-- ============ LEFT ============ -->
+  <aside class="col left"><div class="scroll">
+    <div class="panel"><div class="ptitle">◈ Sentiment overview</div><div class="pad">
+      <div class="sent" data-s="positive" style="--c:var(--pos)"><div class="ic">☺</div><div><div class="lab">Positive</div><div><span class="num" id="s-positive">-</span><span class="dl" id="d-positive"></span></div></div><svg id="sp-positive" viewBox="0 0 86 36"></svg></div>
+      <div class="sent" data-s="neutral" style="--c:var(--neu)"><div class="ic">◔</div><div><div class="lab">Neutral</div><div><span class="num" id="s-neutral">-</span><span class="dl" id="d-neutral"></span></div></div><svg id="sp-neutral" viewBox="0 0 86 36"></svg></div>
+      <div class="sent" data-s="negative" style="--c:var(--neg)"><div class="ic">☹</div><div><div class="lab">Negative</div><div><span class="num" id="s-negative">-</span><span class="dl" id="d-negative"></span></div></div><svg id="sp-negative" viewBox="0 0 86 36"></svg></div>
+    </div></div>
+
+    <div class="panel" style="display:none"><div class="ptitle">▲ Threat level <small id="unc"></small></div><div class="pad" id="threat"></div></div>
+
+    <div class="panel"><div class="ptitle">⚙ Filters</div><div class="filters">
+      <input id="q" placeholder="Search keywords...">
+      <div class="ms" id="scope"><button type="button" id="scope-btn" class="msbtn"><span id="scope-label">CISF + ISRO</span><span>▾</span></button><div class="msmenu" id="scope-menu" style="display:none"><label class="msrow"><input type="checkbox" value="CISF"><span>CISF</span><small></small></label><label class="msrow"><input type="checkbox" value="ISRO"><span>ISRO</span><small></small></label><label class="msrow"><input type="checkbox" value="URSC"><span>URSC</span><small></small></label><label class="msrow"><input type="checkbox" value="ISITE"><span>ISITE</span><small></small></label><label class="msrow"><input type="checkbox" value="IDSN"><span>IDSN</span><small></small></label><label class="msrow"><input type="checkbox" value="LPSC"><span>LPSC</span><small></small></label><label class="msrow"><input type="checkbox" value="LEOS"><span>LEOS</span><small></small></label><label class="msrow"><input type="checkbox" value="ISTRAC"><span>ISTRAC</span><small></small></label><label class="msrow"><input type="checkbox" value="DOS"><span>DOS · Department of Space</span><small></small></label><label class="msrow"><input type="checkbox" value="MOX"><span>MOX · Mission Operations Complex</span><small></small></label><label class="msrow"><input type="checkbox" value="SPACE"><span>Space (अंतरिक्ष)</span><small></small></label><button type="button" id="scope-clear">✕ सब हटाएँ</button></div></div>
+      <select id="sentiment"><option value="">सभी sentiment</option><option value="negative">Negative</option><option value="positive">Positive</option><option value="neutral">Neutral</option></select>
+      <select id="platform"><option value="">सभी platform</option><option value="news">News</option><option value="youtube">YouTube</option><option value="reddit">Reddit</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="x">X (Twitter)</option></select>
+      <select id="language"><option value="">सभी भाषा</option><option value="hi">हिंदी</option><option value="en">English</option></select>
+      <select id="hours"><option value="">सभी समय</option><option value="1">Last 1 Hour</option><option value="6">Last 6 Hours</option><option value="24">Last 24 Hours</option><option value="168">Last 7 Days</option><option value="720">Last 30 Days</option></select>
+      <div class="frow"><button id="apply" style="background:var(--cy);color:#02080f">▼ Apply filters</button><button id="refresh" class="sq" title="अभी नई खबरें लाओ">⟳</button></div>
+    </div></div>
+  </div></aside>
+
+  <!-- ============ CENTRE ============ -->
+  <section class="col center">
+    <div class="scroll">
+      <div class="panel"><div class="ptitle">◈ Live intelligence pipeline <small id="pipe-note"></small></div><svg id="pipe" viewBox="0 0 760 196"></svg></div>
+
+      <div class="panel"><div class="ptitle">⌖ Live threat map — India &amp; neighbouring region <small id="map-note"></small></div>
+        <div class="mtabs" id="mtabs"><button class="active" data-view="india">India</button><button data-view="asia">South Asia</button><button data-view="world">Global</button></div>
+        <div class="mapwrap" style="position:relative"><div style="position:relative"><svg id="map" viewBox="0 0 600 560"></svg>
+          <div class="legend"><div><i style="background:var(--crit)"></i>Critical</div><div><i style="background:var(--high)"></i>High</div><div><i style="background:var(--med)"></i>Medium</div><div><i style="background:var(--low)"></i>Low</div></div></div>
+          <div class="insights"><h4>Location insights</h4><div id="insights"></div></div></div></div>
+
+      <div class="cards5" id="cards5" style="display:none"></div>
+
+      <div class="bottom">
+        <div class="panel"><div class="ptitle">▤ System logs (live)</div><div id="logs"></div></div>
+        <div class="panel askbox">
+          <div id="voicebox"><div class="st mono" id="v-state">Standby — 🎤 दबाकर बोलिए: Hey Drishti</div><div class="you" id="v-you"></div><div class="bot" id="v-bot"></div></div>
+          <div class="askrow"><button id="mic" class="roundbtn" title="Voice चालू करें">🎤</button><input id="ask" placeholder="DRISHTI AI — Ask intelligence..."><button id="send" class="roundbtn" title="भेजिए">➤</button></div>
+          <div class="sugg" id="sugg"><button data-a="cisf-neg">Show CISF negative news</button><button data-a="isro">ISRO latest updates</button><button data-a="delhi">Delhi protest alerts</button><button data-a="trend">Sentiment trend today</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewer"><div class="box">
+      <div class="vbar"><span class="tag plat" id="vw-plat"></span><span class="ttl" id="vw-title"></span>
+        <a id="vw-orig" href="#" target="_blank" rel="noopener noreferrer" style="display:none">नए टैब में खोलें ↗</a><button id="vw-close">← डैशबोर्ड</button></div>
+      <div class="body" id="vw-body"></div></div></div>
+  </section>
+
+  <!-- ============ RIGHT ============ -->
+  <aside class="col right">
+    <div class="panel feedpanel">
+      <div class="ptitle">◈ Live intelligence feed <small id="feed-n"></small></div>
+      
+      <div id="fchips"></div>
+      <div id="list"></div>
+    </div>
+    <div class="twocol" style="display:none">
+      <div class="panel mini"><h5>Top entities <small>(filtered)</small></h5><div id="topent"></div></div>
+      <div class="panel mini"><h5>Top keywords <small>(filtered)</small></h5><div id="topkw"></div></div>
+    </div>
+  </aside>
+</div>
+
+<!-- ============ OTHER TABS ============ -->
+<div class="page" id="p-analytics"><div class="grid2" id="an-grid"></div></div>
+<div class="page" id="p-map"><div class="panel bigpanel"><div class="ptitle">⌖ Threat map — full view <small id="bm-note"></small></div>
+  <div class="mtabs" id="bmtabs"><button class="active" data-view="india">India</button><button data-view="asia">South Asia</button><button data-view="world">Global</button></div>
+  <div class="mapwrap" style="position:relative;margin-top:6px"><div><svg id="bigmap" viewBox="0 0 600 560"></svg></div><div class="insights" style="max-height:640px"><h4>Locations</h4><div id="bm-ins"></div></div></div></div></div>
+<div class="page" id="p-sources"><div class="srcgrid" id="srcgrid"></div>
+  <div class="panel bigpanel" style="margin-bottom:14px"><div class="ptitle">☰ सोशल मीडिया — कौन क्या डाल रहा है <small id="soc-note"></small></div><div class="inner">
+    <div class="mtabs" id="soc-tabs" style="padding:0 0 10px"><button data-p="news">News</button><button data-p="youtube">YouTube</button><button data-p="reddit">Reddit</button><button data-p="instagram" class="active">Instagram</button><button data-p="facebook">Facebook</button><button data-p="x">X (Twitter)</button></div>
+    <div class="soc"><div class="socl"><input id="soc-q" placeholder="@username खोजें..."><div id="soc-accts"></div></div>
+      <div class="socr"><div id="soc-head"></div><div id="soc-posts"></div></div></div></div></div>
+  <div class="panel bigpanel"><div class="ptitle">☰ CISF नाम वाले अकाउंट — Instagram, Facebook, X <small id="acc-total"></small></div><div class="inner">
+    <div class="mtabs" id="acc-tabs" style="padding:0 0 10px"><button data-ap="" class="active">सभी <span></span></button><button data-ap="instagram">Instagram <span></span></button><button data-ap="facebook">Facebook <span></span></button><button data-ap="x">X (Twitter) <span></span></button></div>
+    <div class="mtabs" id="acc-mode" style="padding:0 0 10px"><button data-m="accounts" class="active">👤 अकाउंट</button><button data-m="posts">📝 इन अकाउंट की पोस्ट — मूड से छाँटें</button></div>
+    <div id="acc-moodbar" style="display:none">
+      <div class="mtabs" id="acc-mood" style="padding:0 0 10px"><button data-s="" class="active">सभी <span></span></button><button data-s="positive">😊 खुश / अच्छी <span></span></button><button data-s="neutral">😐 सामान्य <span></span></button><button data-s="negative">😢 उदास / बुरी <span></span></button></div>
+      <div class="acc-note">यहाँ सिर्फ़ उन अकाउंट की सार्वजनिक पोस्ट हैं जिनके नाम में CISF है। "मूड" पोस्ट के लहजे का AI का पढ़ा हुआ अंदाज़ा है, किसी इंसान की असली हालत का पक्का फ़ैसला नहीं। कोई भी निष्कर्ष निकालने से पहले पोस्ट खुद पढ़िए।</div>
+      <div id="acc-posts"></div></div>
+    <div class="acc-head"><input id="acc-q" type="text" placeholder="USERNAME / नाम खोजें..."><label><input id="acc-w" type="checkbox"> सिर्फ़ Watch वाले</label><button id="acc-refresh">🔍 नए अकाउंट खोजें</button></div>
+    <div class="acc-note" id="acc-count"></div><div id="acc-list"></div></div></div></div>
+<div class="page" id="p-reports"><div class="panel bigpanel"><div class="ptitle">▤ AI daily brief</div><div class="inner">
+  <div class="frow" style="max-width:640px;margin-bottom:12px"><select id="rp-topic"><option value="">CISF + ISRO</option><option>CISF</option><option>ISRO</option></select>
+    <select id="rp-hours"><option value="24">पिछले 24 घंटे</option><option value="168">पिछले 7 दिन</option><option value="0">सारा डेटा</option></select>
+    <button id="rp-go" style="background:var(--cy);color:#02080f;white-space:nowrap">▤ रिपोर्ट बनाइए</button><button id="rp-copy">कॉपी</button><button id="rp-print">प्रिंट</button></div>
+  <div class="mono" id="rp-meta" style="color:var(--muted);font-size:11px;margin-bottom:6px"></div><div id="reportbox"></div></div></div></div>
+
+<script src="/static/app.js"></script>
+<script src="/static/voice.js"></script>
+</body>
+</html>
